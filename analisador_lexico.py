@@ -25,6 +25,12 @@ class AnalisadorLexico:
             if c == '(' or c == ')':
                 return estadoParenteses, i
 
+            if c in "+-*%^":
+                return estadoOperador, i
+
+            if c == '/':
+                return estadoBarra, i
+
             return None, i
 
         def estadoParenteses(i: int):
@@ -44,6 +50,19 @@ class AnalisadorLexico:
 
                 tokens.append(("FP", ")"))
 
+            return estadoInicial, i + 1
+
+        def estadoOperador(i: int):
+            c = linha[i]
+            tokens.append(("OP", c))
+            return estadoInicial, i + 1
+
+        def estadoBarra(i: int):
+            if i + 1 < n and linha[i + 1] == '/':
+                tokens.append(("OP", "//"))
+                return estadoInicial, i + 2
+
+            tokens.append(("OP", "/"))
             return estadoInicial, i + 1
 
         estadoAtual = estadoInicial
