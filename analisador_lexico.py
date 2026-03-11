@@ -79,13 +79,25 @@ class AnalisadorLexico:
 
         def estadoNumero(i: int):
             lexema = ""
+            tem_ponto = False
 
             while i < n and (linha[i].isdigit() or linha[i] == '.'):
+                if linha[i] == '.':
+                    if tem_ponto:
+                        raise ValueError(f"Número malformado: múltiplos pontos em '{lexema + linha[i]}'")
+                    tem_ponto = True
+
                 lexema += linha[i]
                 i += 1
 
-            if lexema.count('.') > 1 or lexema == '.' or lexema.endswith('.'):
+            if lexema.endswith('.'):
                 raise ValueError(f"Número malformado: {lexema}")
+
+            if i < n and linha[i] == ',':
+                raise ValueError(f"Número malformado: use ponto em vez de vírgula em '{lexema},'")
+
+            if i < n and linha[i].isalpha():
+                raise ValueError(f"Token inválido: número não pode ser seguido de letras em '{lexema + linha[i]}'")
 
             tokens.append(("NUM", lexema))
             return estadoInicial, i
@@ -96,6 +108,12 @@ class AnalisadorLexico:
             while i < n and linha[i].isupper():
                 lexema += linha[i]
                 i += 1
+
+            if i < n and linha[i].isalpha() and not linha[i].isupper():
+                raise ValueError(f"Identificador inválido: '{lexema + linha[i]}'. Use apenas letras maiúsculas")
+
+            if i < n and linha[i].isdigit():
+                raise ValueError(f"Identificador inválido: '{lexema + linha[i]}'. Letras e números não podem ficar juntos")
 
             if lexema == "RES":
                 tokens.append(("CMD", lexema))
