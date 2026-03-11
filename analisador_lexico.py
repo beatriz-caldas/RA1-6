@@ -31,13 +31,19 @@ class AnalisadorLexico:
             if c == '/':
                 return estadoBarra, i
 
-            if c.isdigit() or c == '.':
+            if c.isdigit():
                 return estadoNumero, i
 
-            if c.isalpha():
+            if c.isupper():
                 return estadoIdentificador, i
 
-            return None, i
+            if c == '.':
+                raise ValueError("Número malformado: número não pode começar com ponto")
+
+            if c.isalpha():
+                raise ValueError(f"Identificador inválido: '{c}'. Use apenas letras maiúsculas")
+
+            raise ValueError(f"Caractere léxico inválido: {c}")
 
         def estadoParenteses(i: int):
             nonlocal parenteses_abertos
@@ -87,7 +93,7 @@ class AnalisadorLexico:
         def estadoIdentificador(i: int):
             lexema = ""
 
-            while i < n and linha[i].isalpha():
+            while i < n and linha[i].isupper():
                 lexema += linha[i]
                 i += 1
 
