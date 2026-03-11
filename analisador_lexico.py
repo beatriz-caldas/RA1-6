@@ -31,6 +31,9 @@ class AnalisadorLexico:
             if c == '/':
                 return estadoBarra, i
 
+            if c.isdigit() or c == '.':
+                return estadoNumero, i
+
             return None, i
 
         def estadoParenteses(i: int):
@@ -64,6 +67,16 @@ class AnalisadorLexico:
 
             tokens.append(("OP", "/"))
             return estadoInicial, i + 1
+
+        def estadoNumero(i: int):
+            lexema = ""
+
+            while i < n and (linha[i].isdigit() or linha[i] == '.'):
+                lexema += linha[i]
+                i += 1
+
+            tokens.append(("NUM", lexema))
+            return estadoInicial, i
 
         estadoAtual = estadoInicial
         indice = 0
