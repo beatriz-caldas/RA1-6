@@ -9,6 +9,22 @@ import sys
 
 class AnalisadorLexico:
 
+    def lerArquivo(self, nome_arquivo: str) -> list:
+        linhas = []
+
+        try:
+            with open(nome_arquivo, "r", encoding="utf-8") as arquivo:
+                for linha in arquivo:
+                    linha_limpa = linha.strip()
+                    if linha_limpa:
+                        linhas.append(linha_limpa)
+
+            return linhas
+
+        except FileNotFoundError:
+            print(f"Erro: Arquivo '{nome_arquivo}' não encontrado.")
+            sys.exit(1)
+
     def parseExpressao(self, linha: str, tokens: list) -> None:
         n = len(linha)
         parenteses_abertos = 0
