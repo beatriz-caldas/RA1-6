@@ -6,10 +6,27 @@
 
 import sys
 
+# AP -> abre parentese
+# FP -> fecha parentese
+# NUM -> número
+# OP -> operador
+# CMD -> RES
+# VAR -> memória/identificador em maiúsculas
+
 
 class AnalisadorLexico:
+    """Classe responsável pela análise léxica das expressões da linguagem."""
 
     def lerArquivo(self, nome_arquivo: str) -> list:
+        """
+        Lê um arquivo de expressões e retorna as linhas não vazias.
+
+        Args:
+            nome_arquivo (str): Nome do arquivo de entrada.
+
+        Returns:
+            list: Lista contendo as linhas válidas do arquivo.
+        """
         linhas = []
 
         try:
@@ -26,10 +43,25 @@ class AnalisadorLexico:
             sys.exit(1)
 
     def parseExpressao(self, linha: str, tokens: list) -> None:
+        """
+        Analisa uma linha da linguagem e extrai seus tokens usando
+        um Autômato Finito Determinístico com estados em funções.
+
+        Args:
+            linha (str): Linha da expressão a ser analisada.
+            tokens (list): Lista onde os tokens reconhecidos serão armazenados.
+
+        Returns:
+            None
+        """
         n = len(linha)
         parenteses_abertos = 0
 
         def estadoInicial(i: int):
+            """
+            Estado inicial do autômato.
+            Decide qual estado deve processar o caractere atual.
+            """
             if i >= n:
                 return None, i
 
@@ -62,6 +94,10 @@ class AnalisadorLexico:
             raise ValueError(f"Caractere léxico inválido: {c}")
 
         def estadoParenteses(i: int):
+            """
+            Estado responsável por reconhecer parênteses
+            e controlar o balanceamento.
+            """
             nonlocal parenteses_abertos
 
             c = linha[i]
@@ -81,11 +117,18 @@ class AnalisadorLexico:
             return estadoInicial, i + 1
 
         def estadoOperador(i: int):
+            """
+            Estado responsável por reconhecer operadores simples.
+            """
             c = linha[i]
             tokens.append(("OP", c))
             return estadoInicial, i + 1
 
         def estadoBarra(i: int):
+            """
+            Estado responsável por distinguir divisão real (/)
+            de divisão inteira (//).
+            """
             if i + 1 < n and linha[i + 1] == '/':
                 tokens.append(("OP", "//"))
                 return estadoInicial, i + 2
@@ -94,6 +137,10 @@ class AnalisadorLexico:
             return estadoInicial, i + 1
 
         def estadoNumero(i: int):
+            """
+            Estado responsável por reconhecer números inteiros
+            e reais com ponto decimal.
+            """
             lexema = ""
             tem_ponto = False
 
@@ -119,6 +166,10 @@ class AnalisadorLexico:
             return estadoInicial, i
 
         def estadoIdentificador(i: int):
+            """
+            Estado responsável por reconhecer identificadores
+            e a palavra reservada RES.
+            """
             lexema = ""
 
             while i < n and linha[i].isupper():
