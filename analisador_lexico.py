@@ -75,6 +75,9 @@ class AnalisadorLexico:
                 lexema += linha[i]
                 i += 1
 
+            if lexema.count('.') > 1 or lexema == '.' or lexema.endswith('.'):
+                raise ValueError(f"Número malformado: {lexema}")
+
             tokens.append(("NUM", lexema))
             return estadoInicial, i
 
