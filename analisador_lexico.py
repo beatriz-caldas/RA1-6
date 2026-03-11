@@ -34,6 +34,9 @@ class AnalisadorLexico:
             if c.isdigit() or c == '.':
                 return estadoNumero, i
 
+            if c.isalpha():
+                return estadoIdentificador, i
+
             return None, i
 
         def estadoParenteses(i: int):
@@ -79,6 +82,20 @@ class AnalisadorLexico:
                 raise ValueError(f"Número malformado: {lexema}")
 
             tokens.append(("NUM", lexema))
+            return estadoInicial, i
+
+        def estadoIdentificador(i: int):
+            lexema = ""
+
+            while i < n and linha[i].isalpha():
+                lexema += linha[i]
+                i += 1
+
+            if lexema == "RES":
+                tokens.append(("CMD", lexema))
+            else:
+                tokens.append(("VAR", lexema))
+
             return estadoInicial, i
 
         estadoAtual = estadoInicial
