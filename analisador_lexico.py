@@ -224,7 +224,9 @@ class CalcularExpressao:
         pilha = []
 
         for i, (tipo, valor) in enumerate(tokens):
-            if tipo == "VAR":
+            if tipo in ("AP", "FP"):
+                continue
+            elif tipo == "VAR":
                 # Verificar se o último token foi parenteses ou número
                 prev_tipo = tokens[i - 1][0] if i > 0 else None
                 if prev_tipo == "AP":
@@ -235,10 +237,16 @@ class CalcularExpressao:
                     MEM[valor] = pilha.pop()
 
             elif tipo == "CMD" and valor == "RES":
-                n = int(pilha.pop())
-                if n >= len(resultados):
-                    raise IndexError(f"RES inválido, menos de {n + 1} resultados.")
-                pilha.append(resultados[-(n + 1)])
+                if not pilha:
+                    raise ValueError("Falta argumento para RES.")
+
+                n = pilha.pop()
+                if not n.is_integer():
+                    raise ValueError(f"RES inválido: {n}")
+
+                if n <= 0 or n > len(resultados):
+                    raise IndexError(f"RES inválido, menos de {n} resultados.")
+                pilha.append(resultados[-int(n)])
 
             elif tipo == "NUM":
                 try:
@@ -263,8 +271,12 @@ class CalcularExpressao:
                     case "*":
                         pilha.append(float(a * b))
                     case "^":
-                        pilha.append(float(a**b))
+                        if not b.is_integer() or b <= 0:
+                            raise ValueError(f"Expoente inválido: {b}") 
+                        pilha.append(float(a**int(b)))
                     case "%":
+                        if b == 0:
+                            raise ZeroDivisionError("Divisão por zero.")
                         pilha.append(float(a % b))
                     case "//":
                         if b == 0:
