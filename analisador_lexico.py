@@ -267,8 +267,12 @@ class CalcularExpressao:
                     case "%":
                         pilha.append(float(a % b))
                     case "//":
+                        if b == 0:
+                            raise ZeroDivisionError("Divisão por zero.")
                         pilha.append(float(a // b))
                     case "/":
+                        if b == 0:
+                            raise ZeroDivisionError("Divisão por zero.")
                         pilha.append(float(a / b))
                     case _:
                         raise ValueError(f"Operador inválido {valor}")
