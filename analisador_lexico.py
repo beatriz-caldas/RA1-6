@@ -234,7 +234,9 @@ class CalcularExpressao:
                     pilha.append(MEM.get(valor, 0.0))
                 else:
                     # Armazenar valor em MEM
-                    MEM[valor] = pilha.pop()
+                    v = pilha.pop()
+                    MEM[valor] = v
+                    pilha.append(v)
 
             elif tipo == "CMD" and valor == "RES":
                 if not pilha:
