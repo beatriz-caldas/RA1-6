@@ -86,7 +86,9 @@ class AnalisadorLexico:
                 return estadoIdentificador, i
 
             if c == ".":
-                raise ValueError("Número malformado: número não pode começar com ponto")
+                raise ValueError(
+                    "Número malformado: número não pode começar com ponto"
+                )
 
             if c.isalpha():
                 raise ValueError(
@@ -218,52 +220,84 @@ class CalcularExpressao:
         self.MEM = {}
         self.resultados = []
 
-    def executarExpressao(self, tokens: list) -> None:
+    def executarExpressao(self, tokens: list) -> float:
         MEM = self.MEM
         resultados = self.resultados
         pilha = []
 
-        for i, (tipo, valor) in enumerate(tokens):
-            if tipo in ("AP", "FP"):
-                continue
+        for tipo, valor in tokens:
+            if tipo == "AP":
+                pilha.append("(")
+
+            elif tipo == "FP":
+                if not pilha:
+                    raise ValueError(
+                        "Parênteses desbalanceados, ) encontrado sem (."
+                    )
+                res = pilha.pop()
+                if not isinstance(res, float):
+                    raise ValueError(
+                        f"Expressão mal formada: esperado NUM, encontrado {res}"
+                    )
+                if not pilha or pilha[-1] != "(":
+                    raise ValueError(
+                        "Parênteses desbalanceados: ( não encontrada."
+                    )
+
+                # Retirar ( correspondente
+                pilha.pop()
+                pilha.append(res)
+
             elif tipo == "VAR":
-                # Verificar se o último token foi parenteses ou número
-                prev_tipo = tokens[i - 1][0] if i > 0 else None
-                if prev_tipo == "AP":
-                    # Buscar valor em MEM, retornar 0.0 se não existir
+                if pilha and pilha[-1] == "(":
+                    # Caso (MEM) puxa var
                     pilha.append(MEM.get(valor, 0.0))
                 else:
-                    # Armazenar valor em MEM
+                    # Caso (1.0 MEM) guarda var
                     v = pilha.pop()
                     MEM[valor] = v
+
+                    # Coloca o valor guardado como resultado de operacao
+                    # Pode nao ser o comportamento que esperamos, verificar
                     pilha.append(v)
 
             elif tipo == "CMD" and valor == "RES":
-                if not pilha:
-                    raise ValueError("Falta argumento para RES.")
+                if not pilha or not isinstance(pilha[-1], float):
+                    raise ValueError("Falta argumento numérico para RES")
 
                 n = pilha.pop()
                 if not n.is_integer():
-                    raise ValueError(f"RES inválido: {n}")
+                    raise ValueError(
+                        f"RES inválido: N deve ser inteiro, recebeu {n}"
+                    )
 
                 if n <= 0 or n > len(resultados):
-                    raise IndexError(f"RES inválido, menos de {n} resultados.")
+                    raise IndexError(
+                        f"RES inválido, menos de {int(n)} resultados disponíveis"
+                    )
+
                 pilha.append(resultados[-int(n)])
 
             elif tipo == "NUM":
                 try:
                     pilha.append(float(valor))
                 except ValueError:
+                    # Se nao for um numero
                     raise ValueError(f"Token NUM inválido: {valor}")
 
             elif tipo == "OP":
                 if len(pilha) < 2:
                     raise IndexError(
-                        f"Entrada inválida: sem números suficientes para operação {valor}"
+                        f"NUMS insuficientes para operação {valor}."
                     )
 
                 b = pilha.pop()
                 a = pilha.pop()
+
+                if not isinstance(a, float) or not isinstance(b, float):
+                    raise ValueError(
+                        f"Operador {valor}: NUMS inválidos {a} e {b}."
+                    )
 
                 match valor:
                     case "+":
@@ -274,16 +308,16 @@ class CalcularExpressao:
                         pilha.append(float(a * b))
                     case "^":
                         if not b.is_integer() or b <= 0:
-                            raise ValueError(f"Expoente inválido: {b}") 
-                        pilha.append(float(a**int(b)))
+                            raise ValueError(f"Expoente inválido: {b}")
+                        pilha.append(float(a ** int(b)))
                     case "%":
                         if b == 0:
                             raise ZeroDivisionError("Divisão por zero.")
-                        pilha.append(float(a % b))
+                        pilha.append(float(int(a) % int(b)))
                     case "//":
                         if b == 0:
                             raise ZeroDivisionError("Divisão por zero.")
-                        pilha.append(float(a // b))
+                        pilha.append(float(int(a) // int(b)))
                     case "/":
                         if b == 0:
                             raise ZeroDivisionError("Divisão por zero.")
@@ -291,7 +325,8 @@ class CalcularExpressao:
                     case _:
                         raise ValueError(f"Operador inválido {valor}")
 
-        if len(pilha) != 1:
+        if len(pilha) != 1 or not isinstance(pilha[0], float):
+            # No fim do loop a pilha vai ter apenas um valor, o resultado
             raise ValueError("Expressão mal formada")
 
         resultado = pilha[0]
