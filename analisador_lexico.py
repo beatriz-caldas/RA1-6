@@ -86,9 +86,7 @@ class AnalisadorLexico:
                 return estadoIdentificador, i
 
             if c == ".":
-                raise ValueError(
-                    "Número malformado: número não pode começar com ponto"
-                )
+                raise ValueError("Número malformado: número não pode começar com ponto")
 
             if c.isalpha():
                 raise ValueError(
@@ -221,6 +219,15 @@ class CalcularExpressao:
         self.resultados = []
 
     def executarExpressao(self, tokens: list) -> float:
+        """
+        Recebe tokens de parseExpressao e atualisa resultados e MEM
+
+        Args:
+            tokens (list): Lista de tokens de uma linha vindos de parseExpressao
+
+        Returns:
+            float: Resultado final das operações da linha
+        """
         MEM = self.MEM
         resultados = self.resultados
         pilha = []
@@ -231,18 +238,14 @@ class CalcularExpressao:
 
             elif tipo == "FP":
                 if not pilha:
-                    raise ValueError(
-                        "Parênteses desbalanceados, ) encontrado sem (."
-                    )
+                    raise ValueError("Parênteses desbalanceados, ) encontrado sem (.")
                 res = pilha.pop()
                 if not isinstance(res, float):
                     raise ValueError(
                         f"Expressão mal formada: esperado NUM, encontrado {res}"
                     )
                 if not pilha or pilha[-1] != "(":
-                    raise ValueError(
-                        "Parênteses desbalanceados: ( não encontrada."
-                    )
+                    raise ValueError("Parênteses desbalanceados: ( não encontrada.")
 
                 # Retirar ( correspondente
                 pilha.pop()
@@ -267,9 +270,7 @@ class CalcularExpressao:
 
                 n = pilha.pop()
                 if not n.is_integer():
-                    raise ValueError(
-                        f"RES inválido: N deve ser inteiro, recebeu {n}"
-                    )
+                    raise ValueError(f"RES inválido: N deve ser inteiro, recebeu {n}")
 
                 if n <= 0 or n > len(resultados):
                     raise IndexError(
@@ -287,17 +288,13 @@ class CalcularExpressao:
 
             elif tipo == "OP":
                 if len(pilha) < 2:
-                    raise IndexError(
-                        f"NUMS insuficientes para operação {valor}."
-                    )
+                    raise IndexError(f"NUMS insuficientes para operação {valor}.")
 
                 b = pilha.pop()
                 a = pilha.pop()
 
                 if not isinstance(a, float) or not isinstance(b, float):
-                    raise ValueError(
-                        f"Operador {valor}: NUMS inválidos {a} e {b}."
-                    )
+                    raise ValueError(f"Operador {valor}: NUMS inválidos {a} e {b}.")
 
                 match valor:
                     case "+":
