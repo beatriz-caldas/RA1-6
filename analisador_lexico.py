@@ -220,7 +220,7 @@ class CalcularExpressao:
 
     def executarExpressao(self, tokens: list) -> float:
         """
-        Recebe tokens de parseExpressao e atualisa resultados e MEM
+        Recebe tokens de parseExpressao e atualiza resultados e MEM
 
         Args:
             tokens (list): Lista de tokens de uma linha vindos de parseExpressao
