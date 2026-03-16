@@ -70,13 +70,13 @@ class AnalisadorLexico:
             if c.isspace():
                 return estadoInicial, i + 1
 
-            if c == '(' or c == ')':
+            if c == "(" or c == ")":
                 return estadoParenteses, i
 
             if c in "+-*%^":
                 return estadoOperador, i
 
-            if c == '/':
+            if c == "/":
                 return estadoBarra, i
 
             if c.isdigit():
@@ -85,11 +85,13 @@ class AnalisadorLexico:
             if c.isupper():
                 return estadoIdentificador, i
 
-            if c == '.':
+            if c == ".":
                 raise ValueError("Número malformado: número não pode começar com ponto")
 
             if c.isalpha():
-                raise ValueError(f"Identificador inválido: '{c}'. Use apenas letras maiúsculas")
+                raise ValueError(
+                    f"Identificador inválido: '{c}'. Use apenas letras maiúsculas"
+                )
 
             raise ValueError(f"Caractere léxico inválido: {c}")
 
@@ -102,15 +104,17 @@ class AnalisadorLexico:
 
             c = linha[i]
 
-            if c == '(':
+            if c == "(":
                 parenteses_abertos += 1
                 tokens.append(("AP", "("))
 
-            elif c == ')':
+            elif c == ")":
                 parenteses_abertos -= 1
 
                 if parenteses_abertos < 0:
-                    raise ValueError("Parênteses desbalanceados: ')' sem '(' correspondente")
+                    raise ValueError(
+                        "Parênteses desbalanceados: ')' sem '(' correspondente"
+                    )
 
                 tokens.append(("FP", ")"))
 
@@ -129,7 +133,7 @@ class AnalisadorLexico:
             Estado responsável por distinguir divisão real (/)
             de divisão inteira (//).
             """
-            if i + 1 < n and linha[i + 1] == '/':
+            if i + 1 < n and linha[i + 1] == "/":
                 tokens.append(("OP", "//"))
                 return estadoInicial, i + 2
 
@@ -144,23 +148,29 @@ class AnalisadorLexico:
             lexema = ""
             tem_ponto = False
 
-            while i < n and (linha[i].isdigit() or linha[i] == '.'):
-                if linha[i] == '.':
+            while i < n and (linha[i].isdigit() or linha[i] == "."):
+                if linha[i] == ".":
                     if tem_ponto:
-                        raise ValueError(f"Número malformado: múltiplos pontos em '{lexema + linha[i]}'")
+                        raise ValueError(
+                            f"Número malformado: múltiplos pontos em '{lexema + linha[i]}'"
+                        )
                     tem_ponto = True
 
                 lexema += linha[i]
                 i += 1
 
-            if lexema.endswith('.'):
+            if lexema.endswith("."):
                 raise ValueError(f"Número malformado: {lexema}")
 
-            if i < n and linha[i] == ',':
-                raise ValueError(f"Número malformado: use ponto em vez de vírgula em '{lexema},'")
+            if i < n and linha[i] == ",":
+                raise ValueError(
+                    f"Número malformado: use ponto em vez de vírgula em '{lexema},'"
+                )
 
             if i < n and linha[i].isalpha():
-                raise ValueError(f"Token inválido: número não pode ser seguido de letras em '{lexema + linha[i]}'")
+                raise ValueError(
+                    f"Token inválido: número não pode ser seguido de letras em '{lexema + linha[i]}'"
+                )
 
             tokens.append(("NUM", lexema))
             return estadoInicial, i
@@ -177,10 +187,14 @@ class AnalisadorLexico:
                 i += 1
 
             if i < n and linha[i].isalpha() and not linha[i].isupper():
-                raise ValueError(f"Identificador inválido: '{lexema + linha[i]}'. Use apenas letras maiúsculas")
+                raise ValueError(
+                    f"Identificador inválido: '{lexema + linha[i]}'. Use apenas letras maiúsculas"
+                )
 
             if i < n and linha[i].isdigit():
-                raise ValueError(f"Identificador inválido: '{lexema + linha[i]}'. Letras e números não podem ficar juntos")
+                raise ValueError(
+                    f"Identificador inválido: '{lexema + linha[i]}'. Letras e números não podem ficar juntos"
+                )
 
             if lexema == "RES":
                 tokens.append(("CMD", lexema))
@@ -197,3 +211,121 @@ class AnalisadorLexico:
 
         if parenteses_abertos != 0:
             raise ValueError("Parênteses desbalanceados na expressão")
+
+
+class CalcularExpressao:
+    def __init__(self):
+        self.MEM = {}
+        self.resultados = []
+
+    def executarExpressao(self, tokens: list) -> float:
+        """
+        Recebe tokens de parseExpressao e atualiza resultados e MEM
+
+        Args:
+            tokens (list): Lista de tokens de uma linha vindos de parseExpressao
+
+        Returns:
+            float: Resultado final das operações da linha
+        """
+        MEM = self.MEM
+        resultados = self.resultados
+        pilha = []
+
+        for tipo, valor in tokens:
+            if tipo == "AP":
+                pilha.append("(")
+
+            elif tipo == "FP":
+                if not pilha:
+                    raise ValueError("Parênteses desbalanceados, ) encontrado sem (.")
+                res = pilha.pop()
+                if not isinstance(res, float):
+                    raise ValueError(
+                        f"Expressão mal formada: esperado NUM, encontrado {res}"
+                    )
+                if not pilha or pilha[-1] != "(":
+                    raise ValueError("Parênteses desbalanceados: ( não encontrada.")
+
+                # Retirar ( correspondente
+                pilha.pop()
+                pilha.append(res)
+
+            elif tipo == "VAR":
+                if pilha and pilha[-1] == "(":
+                    # Caso (MEM) puxa var
+                    pilha.append(MEM.get(valor, 0.0))
+                else:
+                    # Caso (1.0 MEM) guarda var
+                    v = pilha.pop()
+                    MEM[valor] = v
+
+                    # Coloca o valor guardado como resultado de operacao
+                    # Pode nao ser o comportamento que esperamos, verificar
+                    pilha.append(v)
+
+            elif tipo == "CMD" and valor == "RES":
+                if not pilha or not isinstance(pilha[-1], float):
+                    raise ValueError("Falta argumento numérico para RES")
+
+                n = pilha.pop()
+                if not n.is_integer():
+                    raise ValueError(f"RES inválido: N deve ser inteiro, recebeu {n}")
+
+                if n <= 0 or n > len(resultados):
+                    raise IndexError(
+                        f"RES inválido, menos de {int(n)} resultados disponíveis"
+                    )
+
+                pilha.append(resultados[-int(n)])
+
+            elif tipo == "NUM":
+                try:
+                    pilha.append(float(valor))
+                except ValueError:
+                    # Se nao for um numero
+                    raise ValueError(f"Token NUM inválido: {valor}")
+
+            elif tipo == "OP":
+                if len(pilha) < 2:
+                    raise IndexError(f"NUMS insuficientes para operação {valor}.")
+
+                b = pilha.pop()
+                a = pilha.pop()
+
+                if not isinstance(a, float) or not isinstance(b, float):
+                    raise ValueError(f"Operador {valor}: NUMS inválidos {a} e {b}.")
+
+                match valor:
+                    case "+":
+                        pilha.append(float(a + b))
+                    case "-":
+                        pilha.append(float(a - b))
+                    case "*":
+                        pilha.append(float(a * b))
+                    case "^":
+                        if not b.is_integer() or b <= 0:
+                            raise ValueError(f"Expoente inválido: {b}")
+                        pilha.append(float(a ** int(b)))
+                    case "%":
+                        if b == 0:
+                            raise ZeroDivisionError("Divisão por zero.")
+                        pilha.append(float(int(a) % int(b)))
+                    case "//":
+                        if b == 0:
+                            raise ZeroDivisionError("Divisão por zero.")
+                        pilha.append(float(int(a) // int(b)))
+                    case "/":
+                        if b == 0:
+                            raise ZeroDivisionError("Divisão por zero.")
+                        pilha.append(float(a / b))
+                    case _:
+                        raise ValueError(f"Operador inválido {valor}")
+
+        if len(pilha) != 1 or not isinstance(pilha[0], float):
+            # No fim do loop a pilha vai ter apenas um valor, o resultado
+            raise ValueError("Expressão mal formada")
+
+        resultado = pilha[0]
+        resultados.append(resultado)
+        return resultado
