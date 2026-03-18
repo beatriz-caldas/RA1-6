@@ -334,6 +334,17 @@ class CalcularExpressao:
 class GeradorAssembly:
     """Classe para gerar assembly a partir de uma lista de tokens."""
 
+    def __init__(self) -> None:
+        """
+        Inicializa uma classe GeradorAssembly.
+
+        Returns:
+            None
+        """
+        self.asm_data = []
+        self.contador_constantes = 0
+        self.codigo_assembly = []
+
     def gerarAssembly(self, tokens: list):
         """
         Traduz os tokens RPN para uma Máquina de Pilha em ARMv7.
@@ -344,25 +355,57 @@ class GeradorAssembly:
         Returns:
             None
         """
+        self.codigo_assembly.append("    @ NOVA EXPRESSAO RPN")
         for tipo, valor in tokens:
             if tipo == 'NUM':
-                ...
+                nome_constante = f"const_num_{self.contador_constantes}"
+                self.contador_constantes += 1
+                self.asm_data.append(f"{nome_constante}: .double {valor}")
+                self.codigo_assembly.append(f"    LDR r0, ={nome_constante}")
+                self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+                self.codigo_assembly.append("    VPUSH {d0}")
             elif tipo == 'OP':
+                self.codigo_assembly.append("    VPOP {d1}")
+                self.codigo_assembly.append("    VPOP {d0}")
                 if valor == '+':
-                    ...
+                    self.codigo_assembly.append("    VADD.F64 d2, d0, d1")
                 elif valor == '-':
-                    ...
+                    self.codigo_assembly.append("    VSUB.F64 d2, d0, d1")
                 elif valor == '*':
-                    ...
+                    self.codigo_assembly.append("    VMUL.F64 d2, d0, d1")
                 elif valor == '/':
-                    ...
+                    self.codigo_assembly.append("    VDIV.F64 d2, d0, d1")
                 elif valor == '//':
                     ...
                 elif valor == '%':
                     ...
                 elif valor == '^':
                     ...
+                self.codigo_assembly.append("    VPUSH {d2}")
             elif tipo == 'CMD':
                 ...
             elif tipo == 'VAR':
                 ...
+        self.codigo_assembly.append("    VPOP {d0}")
+        self.codigo_assembly.append("    VSTR.F64 d0, [r0]")
+        self.codigo_assembly.append("")
+
+    def exportarArquivoAssembly(self, nome_saida: str) -> None:
+        """
+        Exporta um código assembly gerado para um arquivo .s para execução.
+
+        Args:
+            nome_saida (str): O nome do arquivo de saída.
+
+        Returns:
+            None
+        """
+        asm_final = [".text", ".global _start", "_start:"]
+        asm_final.extend(self.codigo_assembly)
+        asm_final.extend(["fim:", "    B fim", ""])
+        if self.asm_data:
+            asm_final.append(".data")
+            asm_final.extend(self.asm_data)
+            asm_final.append("")
+        with open(nome_saida, "w", encoding="utf-8") as file:
+            file.write("\n".join(asm_final))
