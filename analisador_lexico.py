@@ -329,3 +329,40 @@ class CalcularExpressao:
         resultado = pilha[0]
         resultados.append(resultado)
         return resultado
+
+
+class GeradorAssembly:
+    """Classe para gerar assembly a partir de uma lista de tokens."""
+
+    def gerarAssembly(self, tokens: list):
+        """
+        Traduz os tokens RPN para uma Máquina de Pilha em ARMv7.
+        
+        Args:
+            tokens (list): A lista de tokens RPN.
+
+        Returns:
+            None
+        """
+        for tipo, valor in tokens:
+            if tipo == 'NUM':
+                ...
+            elif tipo == 'OP':
+                if valor == '+':
+                    ...
+                elif valor == '-':
+                    ...
+                elif valor == '*':
+                    ...
+                elif valor == '/':
+                    ...
+                elif valor == '//':
+                    ...
+                elif valor == '%':
+                    ...
+                elif valor == '^':
+                    ...
+            elif tipo == 'CMD':
+                ...
+            elif tipo == 'VAR':
+                ...
