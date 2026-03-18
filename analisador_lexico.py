@@ -376,9 +376,19 @@ class GeradorAssembly:
                 elif valor == '/':
                     self.codigo_assembly.append("    VDIV.F64 d2, d0, d1")
                 elif valor == '//':
-                    ...
+                    self.codigo_assembly.append("    VDIV.F64 d2, d0, d1")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s0, d2")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d2, s0")
                 elif valor == '%':
-                    ...
+                    self.codigo_assembly.append("    VCVT.S32.F64 s0, d0")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s2, d1")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d0, s0")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d1, s2")
+                    self.codigo_assembly.append("    VDIV.F64 d3, d0, d1")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s4, d3")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d3, s4")
+                    self.codigo_assembly.append("    VMUL.F64 d3, d3, d1")
+                    self.codigo_assembly.append("    VSUB.F64 d2, d0, d3")
                 elif valor == '^':
                     ...
                 self.codigo_assembly.append("    VPUSH {d2}")
