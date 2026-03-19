@@ -342,8 +342,11 @@ class GeradorAssembly:
             None
         """
         self.asm_data = []
+        self.asm_bss = set()
         self.contador_constantes = 0
         self.codigo_assembly = []
+        self.contador_labels = 0
+        self.contador_resultados = 0
 
     def gerarAssembly(self, tokens: list):
         """
@@ -356,6 +359,7 @@ class GeradorAssembly:
             None
         """
         self.codigo_assembly.append("    @ NOVA EXPRESSAO RPN")
+        prev_valor = None
         for tipo, valor in tokens:
             if tipo == 'NUM':
                 nome_constante = f"const_num_{self.contador_constantes}"
@@ -390,15 +394,38 @@ class GeradorAssembly:
                     self.codigo_assembly.append("    VMUL.F64 d3, d3, d1")
                     self.codigo_assembly.append("    VSUB.F64 d2, d0, d3")
                 elif valor == '^':
-                    ...
+                    label = f"pow_loop_{self.contador_labels}"
+                    end = f"pow_end_{self.contador_labels}"
+                    self.contador_labels += 1
+                    self.codigo_assembly.append("    VMOV.F64 d2, d0")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s0, d1")
+                    self.codigo_assembly.append("    VMOV r1, s0")
+                    self.codigo_assembly.append("")
+                    self.codigo_assembly.append(f"{label}:")
+                    self.codigo_assembly.append("    SUB r1, r1, #1")
+                    self.codigo_assembly.append(f"    CMP r1, #0")
+                    self.codigo_assembly.append(f"    BEQ {end}")
+                    self.codigo_assembly.append("    VMUL.F64 d2, d2, d0")
+                    self.codigo_assembly.append(f"    B {label}")
+                    self.codigo_assembly.append(f"{end}:")
                 self.codigo_assembly.append("    VPUSH {d2}")
             elif tipo == 'CMD':
-                ...
+                linha = (self.contador_resultados) - int(prev_valor)
+                if linha < 0:
+                    raise ValueError("RES referencia resultado inexistente")
+                self.codigo_assembly.append(f"    LDR r0, =res_{linha}")
+                self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+                self.codigo_assembly.append("    VPUSH {d0}")
             elif tipo == 'VAR':
                 ...
+            prev_valor = valor
+        nome_res = f"res_{self.contador_resultados}"
+        self.asm_bss.add(nome_res)
         self.codigo_assembly.append("    VPOP {d0}")
+        self.codigo_assembly.append(f"    LDR r0, =res_{self.contador_resultados}")
         self.codigo_assembly.append("    VSTR.F64 d0, [r0]")
         self.codigo_assembly.append("")
+        self.contador_resultados += 1
 
     def exportarArquivoAssembly(self, nome_saida: str) -> None:
         """
