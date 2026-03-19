@@ -360,6 +360,7 @@ class GeradorAssembly:
         """
         self.codigo_assembly.append("    @ NOVA EXPRESSAO RPN")
         prev_valor = None
+        prev_tipo = None
         for tipo, valor in tokens:
             if tipo == 'NUM':
                 nome_constante = f"const_num_{self.contador_constantes}"
@@ -417,8 +418,18 @@ class GeradorAssembly:
                 self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
                 self.codigo_assembly.append("    VPUSH {d0}")
             elif tipo == 'VAR':
-                ...
+                self.asm_bss.add(valor)
+                if prev_tipo == 'AP':
+                    self.codigo_assembly.append(f"    LDR r0, =var_{valor}")
+                    self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+                    self.codigo_assembly.append("    VPUSH {d0}")
+                else:
+                    self.codigo_assembly.append("    VPOP {d0}")
+                    self.codigo_assembly.append(f"    LDR r0, =var_{valor}")
+                    self.codigo_assembly.append("    VSTR.F64 d0, [r0]")
+                    self.codigo_assembly.append("    VPUSH {d0}")
             prev_valor = valor
+            prev_tipo = tipo
         nome_res = f"res_{self.contador_resultados}"
         self.asm_bss.add(nome_res)
         self.codigo_assembly.append("    VPOP {d0}")
@@ -444,5 +455,12 @@ class GeradorAssembly:
             asm_final.append(".data")
             asm_final.extend(self.asm_data)
             asm_final.append("")
+        if self.asm_bss:
+            asm_final.append(".bss")
+            for var in self.asm_bss:
+                if var.startswith("res_"):
+                    asm_final.append(f"{var}: .space 8")
+                else:
+                    asm_final.append(f"var_{var}: .space 8")
         with open(nome_saida, "w", encoding="utf-8") as file:
             file.write("\n".join(asm_final))
