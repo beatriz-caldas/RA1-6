@@ -448,7 +448,8 @@ class GeradorAssembly:
         Returns:
             None
         """
-        asm_final = [".text", ".global _start", "_start:"]
+        asm_final = ["@ Beatriz Caldas", "@ Eduardo Pianovski", "@ Lucas Gasperin", "@ Lucas Sotomaior", "@ Grupo: RA1 6",
+                     "@ Link Repositorio: https://github.com/beatriz-caldas/RA1-6", "", ".text", ".global _start", "_start:"]
         asm_final.extend(self.codigo_assembly)
         asm_final.extend(["fim:", "    B fim", ""])
         if self.asm_data:
