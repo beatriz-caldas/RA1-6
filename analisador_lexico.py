@@ -329,3 +329,139 @@ class CalcularExpressao:
         resultado = pilha[0]
         resultados.append(resultado)
         return resultado
+
+
+class GeradorAssembly:
+    """Classe para gerar assembly a partir de uma lista de tokens."""
+
+    def __init__(self) -> None:
+        """
+        Inicializa uma classe GeradorAssembly.
+
+        Returns:
+            None
+        """
+        self.asm_data = []
+        self.asm_bss = set()
+        self.contador_constantes = 0
+        self.codigo_assembly = []
+        self.contador_labels = 0
+        self.contador_resultados = 0
+
+    def gerarAssembly(self, tokens: list):
+        """
+        Traduz os tokens RPN para uma Máquina de Pilha em ARMv7.
+        
+        Args:
+            tokens (list): A lista de tokens RPN.
+
+        Returns:
+            None
+        """
+        self.codigo_assembly.append("    @ NOVA EXPRESSAO RPN")
+        prev_valor = None
+        prev_tipo = None
+        for tipo, valor in tokens:
+            if tipo == 'NUM':
+                nome_constante = f"const_num_{self.contador_constantes}"
+                self.contador_constantes += 1
+                self.asm_data.append(f"{nome_constante}: .double {valor}")
+                self.codigo_assembly.append(f"    LDR r0, ={nome_constante}")
+                self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+                self.codigo_assembly.append("    VPUSH {d0}")
+            elif tipo == 'OP':
+                self.codigo_assembly.append("    VPOP {d1}")
+                self.codigo_assembly.append("    VPOP {d0}")
+                if valor == '+':
+                    self.codigo_assembly.append("    VADD.F64 d2, d0, d1")
+                elif valor == '-':
+                    self.codigo_assembly.append("    VSUB.F64 d2, d0, d1")
+                elif valor == '*':
+                    self.codigo_assembly.append("    VMUL.F64 d2, d0, d1")
+                elif valor == '/':
+                    self.codigo_assembly.append("    VDIV.F64 d2, d0, d1")
+                elif valor == '//':
+                    self.codigo_assembly.append("    VDIV.F64 d2, d0, d1")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s0, d2")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d2, s0")
+                elif valor == '%':
+                    self.codigo_assembly.append("    VCVT.S32.F64 s0, d0")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s2, d1")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d0, s0")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d1, s2")
+                    self.codigo_assembly.append("    VDIV.F64 d3, d0, d1")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s4, d3")
+                    self.codigo_assembly.append("    VCVT.F64.S32 d3, s4")
+                    self.codigo_assembly.append("    VMUL.F64 d3, d3, d1")
+                    self.codigo_assembly.append("    VSUB.F64 d2, d0, d3")
+                elif valor == '^':
+                    label = f"pow_loop_{self.contador_labels}"
+                    end = f"pow_end_{self.contador_labels}"
+                    self.contador_labels += 1
+                    self.codigo_assembly.append("    VMOV.F64 d2, d0")
+                    self.codigo_assembly.append("    VCVT.S32.F64 s0, d1")
+                    self.codigo_assembly.append("    VMOV r1, s0")
+                    self.codigo_assembly.append("")
+                    self.codigo_assembly.append(f"{label}:")
+                    self.codigo_assembly.append("    SUB r1, r1, #1")
+                    self.codigo_assembly.append(f"    CMP r1, #0")
+                    self.codigo_assembly.append(f"    BEQ {end}")
+                    self.codigo_assembly.append("    VMUL.F64 d2, d2, d0")
+                    self.codigo_assembly.append(f"    B {label}")
+                    self.codigo_assembly.append(f"{end}:")
+                self.codigo_assembly.append("    VPUSH {d2}")
+            elif tipo == 'CMD':
+                linha = (self.contador_resultados) - int(prev_valor)
+                if linha < 0:
+                    raise ValueError("RES referencia resultado inexistente")
+                self.codigo_assembly.append(f"    LDR r0, =res_{linha}")
+                self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+                self.codigo_assembly.append("    VPUSH {d0}")
+            elif tipo == 'VAR':
+                self.asm_bss.add(valor)
+                if prev_tipo == 'AP':
+                    self.codigo_assembly.append(f"    LDR r0, =var_{valor}")
+                    self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+                    self.codigo_assembly.append("    VPUSH {d0}")
+                else:
+                    self.codigo_assembly.append("    VPOP {d0}")
+                    self.codigo_assembly.append(f"    LDR r0, =var_{valor}")
+                    self.codigo_assembly.append("    VSTR.F64 d0, [r0]")
+                    self.codigo_assembly.append("    VPUSH {d0}")
+            prev_valor = valor
+            prev_tipo = tipo
+        nome_res = f"res_{self.contador_resultados}"
+        self.asm_bss.add(nome_res)
+        self.codigo_assembly.append("    VPOP {d0}")
+        self.codigo_assembly.append(f"    LDR r0, =res_{self.contador_resultados}")
+        self.codigo_assembly.append("    VSTR.F64 d0, [r0]")
+        self.codigo_assembly.append("")
+        self.contador_resultados += 1
+
+    def exportarArquivoAssembly(self, nome_saida: str) -> None:
+        """
+        Exporta um código assembly gerado para um arquivo .s para execução.
+
+        Args:
+            nome_saida (str): O nome do arquivo de saída.
+
+        Returns:
+            None
+        """
+        asm_final = ["@ Beatriz Caldas", "@ Eduardo Pianovski", "@ Lucas Gasperin", "@ Lucas Sotomaior", "@ Grupo: RA1 6",
+                     "@ Link Repositorio: https://github.com/beatriz-caldas/RA1-6", "", ".text", ".global _start", "_start:"]
+        asm_final.extend(self.codigo_assembly)
+        asm_final.extend(["fim:", "    B fim", ""])
+        if self.asm_data:
+            asm_final.append(".data")
+            asm_final.extend(self.asm_data)
+            asm_final.append("")
+        if self.asm_bss:
+            asm_final.append(".bss")
+            for var in self.asm_bss:
+                if var.startswith("res_"):
+                    asm_final.append(f"{var}: .space 8")
+                else:
+                    asm_final.append(f"var_{var}: .space 8")
+        with open(nome_saida, "w", encoding="utf-8") as file:
+            file.write("\n".join(asm_final))
