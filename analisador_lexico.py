@@ -537,7 +537,7 @@ def main():
 
     testar_fsm_lexico()
 
-    nome_arquivo_input = sys.argv
+    nome_arquivo_input = sys.argv[1]
 
     lexico = AnalisadorLexico()
     calc = CalcularExpressao()
@@ -566,6 +566,15 @@ def main():
             print(f"Erro na linha {i+1}: {linha.strip()}\n  -> {e}\n")
 
     exibirResultados(resultados)
+
+    if todos_os_tokens:
+        with open("tokens_gerados.txt", "w", encoding="utf-8") as f:
+            for idx, t_list in enumerate(todos_os_tokens):
+                f.write(f"Linha {idx+1}: {t_list}\n")
+        print("\nArquivo de tokens gerado com sucesso.")
+
+        gerador_asm.exportarArquivoAssembly("saida.s")
+        print("Arquivo Assembly 'saida.s' gerado com sucesso.")
 
 if __name__ == "__main__":
     main()
