@@ -555,6 +555,10 @@ def main():
             
             resultado = calc.executarExpressao(tokens)
 
+            gerador_asm.gerarAssembly(tokens)
+
+            todos_os_tokens.append(tokens)
+
             resultados[i+1] = resultado
             
         except Exception as e:
