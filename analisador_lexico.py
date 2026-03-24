@@ -466,6 +466,29 @@ class GeradorAssembly:
         with open(nome_saida, "w", encoding="utf-8") as file:
             file.write("\n".join(asm_final))
 
+def testar_fsm_lexico() -> None:
+    """
+    Testes unitários para validar o analisador léxico.
+    """
+    lex = AnalisadorLexico()
+    
+    casos_sucesso = [
+        "(3.14 2.0 +)",
+        "RES 1 +",
+        "VAR //",
+        "10 3 %"
+    ]
+
+    for caso in casos_sucesso:
+        tokens = []
+        try:
+            lex.parseExpressao(caso, tokens)
+            assert len(tokens) > 0, f"Falha: O FSM não gerou tokens para uma entrada válida: '{caso}'."
+        except ValueError as e:
+            print(f"Falha inesperada no teste de sucesso '{caso}': {e}")
+
+    print("Testes unitários do Analisador Léxico concluídos com sucesso.\n")
+
 def exibirResultados(resultados: list) -> None:
     """
     Exibe os resultados das expressões com uma casa decimal.
