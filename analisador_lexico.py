@@ -545,5 +545,23 @@ def main():
 
     linhas = lexico.lerArquivo(nome_arquivo_input)
 
+    todos_os_tokens = []
+    resultados = {}
+
+    for i, linha in enumerate(linhas):
+        tokens = []
+        try:
+            lexico.parseExpressao(linha, tokens)
+            
+            resultado = calc.executarExpressao(tokens)
+
+            resultados[i+1] = resultado
+            
+        except Exception as e:
+            resultados[i+1] = None
+            print(f"Erro na linha {i+1}: {linha.strip()}\n  -> {e}\n")
+
+    exibirResultados(resultados)
+
 if __name__ == "__main__":
     main()
