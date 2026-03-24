@@ -487,6 +487,36 @@ def testar_fsm_lexico() -> None:
         except ValueError as e:
             print(f"Falha inesperada no teste de sucesso '{caso}': {e}")
 
+    casos_erro = [
+        (".5", "Número malformado: número não pode começar com ponto"),
+        ("var", "Identificador inválido: 'v'. Use apenas letras maiúsculas"),
+        ("3 @ 2", "Caractere léxico inválido: @"),
+        
+        ("3 2 + )", "Parênteses desbalanceados: ')' sem '(' correspondente"),
+        
+        ("3.14.15", "Número malformado: múltiplos pontos em '3.14.'"),
+        ("3.", "Número malformado: 3."),
+        ("3,14", "Número malformado: use ponto em vez de vírgula em '3,'"),
+        ("3A", "Token inválido: número não pode ser seguido de letras em '3A'"),
+        
+        ("VAr", "Identificador inválido: 'VAr'. Use apenas letras maiúsculas"),
+        ("VAR1", "Identificador inválido: 'VAR1'. Letras e números não podem ficar juntos"),
+        
+        ("( 3 2 +", "Parênteses desbalanceados na expressão")
+    ]
+
+    for caso, erro_esperado in casos_erro:
+        tokens = []
+        passou_sem_erro = False
+        try:
+            lex.parseExpressao(caso, tokens)
+            passou_sem_erro = True
+        except ValueError as e:
+            assert str(e) == erro_esperado, f"Erro divergente para '{caso}'.\nEsperado: '{erro_esperado}'\nObtido: '{e}'"
+        
+        if passou_sem_erro:
+            print(f"Falha no teste: A expressão '{caso}' deveria ter falhado, mas passou.")
+
     print("Testes unitários do Analisador Léxico concluídos com sucesso.\n")
 
 def exibirResultados(resultados: list) -> None:
