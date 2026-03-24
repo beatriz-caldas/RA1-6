@@ -465,3 +465,22 @@ class GeradorAssembly:
                     asm_final.append(f"var_{var}: .space 8")
         with open(nome_saida, "w", encoding="utf-8") as file:
             file.write("\n".join(asm_final))
+
+def exibirResultados(resultados: list) -> None:
+    """
+    Exibe os resultados das expressões com uma casa decimal.
+    """
+
+    print("Resultados das Expressões")
+    for i, res in resultados.items():
+        if res != None:
+            print(f"Linha {i}: {res:.1f}")
+
+def main():   
+    if len(sys.argv) != 2:
+        print("Por favor, entre com o nome do arquivo de teste, e apenas o nome do arquivo de teste.")
+        print("Ex.: python analisador_lexico.py teste1.txt")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
