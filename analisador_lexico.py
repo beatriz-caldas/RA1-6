@@ -535,5 +535,15 @@ def main():
         print("Ex.: python analisador_lexico.py teste1.txt")
         sys.exit(1)
 
+    testar_fsm_lexico()
+
+    nome_arquivo_input = sys.argv
+
+    lexico = AnalisadorLexico()
+    calc = CalcularExpressao()
+    gerador_asm = GeradorAssembly()
+
+    linhas = lexico.lerArquivo(nome_arquivo_input)
+
 if __name__ == "__main__":
     main()
