@@ -434,6 +434,12 @@ class GeradorAssembly:
         self.codigo_assembly.append("    VPOP {d0}")
         self.codigo_assembly.append(f"    LDR r0, =res_{self.contador_resultados}")
         self.codigo_assembly.append("    VSTR.F64 d0, [r0]")
+        self.codigo_assembly.append("    VCVT.S32.F64 s0, d0")
+        self.codigo_assembly.append("    VMOV r1, s0")
+        self.codigo_assembly.append("    CMP r1, #0")
+        self.codigo_assembly.append("    RSBLT r1, r1, #0")
+        self.codigo_assembly.append("    LDR r2, =0xFF200000")
+        self.codigo_assembly.append("    STR r1, [r2]")
         self.codigo_assembly.append("")
         self.contador_resultados += 1
 
