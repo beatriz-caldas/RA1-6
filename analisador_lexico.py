@@ -465,3 +465,116 @@ class GeradorAssembly:
                     asm_final.append(f"var_{var}: .space 8")
         with open(nome_saida, "w", encoding="utf-8") as file:
             file.write("\n".join(asm_final))
+
+def testar_fsm_lexico() -> None:
+    """
+    Testes unitários para validar o analisador léxico.
+    """
+    lex = AnalisadorLexico()
+    
+    casos_sucesso = [
+        "(3.14 2.0 +)",
+        "RES 1 +",
+        "VAR //",
+        "10 3 %"
+    ]
+
+    for caso in casos_sucesso:
+        tokens = []
+        try:
+            lex.parseExpressao(caso, tokens)
+            assert len(tokens) > 0, f"Falha: O FSM não gerou tokens para uma entrada válida: '{caso}'."
+        except ValueError as e:
+            print(f"Falha inesperada no teste de sucesso '{caso}': {e}")
+
+    casos_erro = [
+        (".5", "Número malformado: número não pode começar com ponto"),
+        ("var", "Identificador inválido: 'v'. Use apenas letras maiúsculas"),
+        ("3 @ 2", "Caractere léxico inválido: @"),
+        
+        ("3 2 + )", "Parênteses desbalanceados: ')' sem '(' correspondente"),
+        
+        ("3.14.15", "Número malformado: múltiplos pontos em '3.14.'"),
+        ("3.", "Número malformado: 3."),
+        ("3,14", "Número malformado: use ponto em vez de vírgula em '3,'"),
+        ("3A", "Token inválido: número não pode ser seguido de letras em '3A'"),
+        
+        ("VAr", "Identificador inválido: 'VAr'. Use apenas letras maiúsculas"),
+        ("VAR1", "Identificador inválido: 'VAR1'. Letras e números não podem ficar juntos"),
+        
+        ("( 3 2 +", "Parênteses desbalanceados na expressão")
+    ]
+
+    for caso, erro_esperado in casos_erro:
+        tokens = []
+        passou_sem_erro = False
+        try:
+            lex.parseExpressao(caso, tokens)
+            passou_sem_erro = True
+        except ValueError as e:
+            assert str(e) == erro_esperado, f"Erro divergente para '{caso}'.\nEsperado: '{erro_esperado}'\nObtido: '{e}'"
+        
+        if passou_sem_erro:
+            print(f"Falha no teste: A expressão '{caso}' deveria ter falhado, mas passou.")
+
+    print("Testes unitários do Analisador Léxico concluídos com sucesso.\n")
+
+def exibirResultados(resultados: list) -> None:
+    """
+    Exibe os resultados das expressões com uma casa decimal.
+    """
+
+    print("Resultados das Expressões")
+    for i, res in resultados.items():
+        if res != None:
+            print(f"Linha {i}: {res:.1f}")
+
+def main():   
+    if len(sys.argv) != 2:
+        print("Por favor, entre com o nome do arquivo de teste, e apenas o nome do arquivo de teste.")
+        print("Ex.: python analisador_lexico.py teste1.txt")
+        sys.exit(1)
+
+    testar_fsm_lexico()
+
+    nome_arquivo_input = sys.argv[1]
+
+    lexico = AnalisadorLexico()
+    calc = CalcularExpressao()
+    gerador_asm = GeradorAssembly()
+
+    linhas = lexico.lerArquivo(nome_arquivo_input)
+
+    todos_os_tokens = []
+    resultados = {}
+
+    for i, linha in enumerate(linhas):
+        tokens = []
+        try:
+            lexico.parseExpressao(linha, tokens)
+            
+            resultado = calc.executarExpressao(tokens)
+
+            gerador_asm.gerarAssembly(tokens)
+
+            todos_os_tokens.append(tokens)
+
+            resultados[i+1] = resultado
+            
+        except Exception as e:
+            resultados[i+1] = None
+            print(f"Erro na linha {i+1}: {linha.strip()}\n  -> {e}\n")
+
+    exibirResultados(resultados)
+
+    if todos_os_tokens:
+        with open("tokens_gerados.txt", "w", encoding="utf-8") as f:
+            for idx, t_list in enumerate(todos_os_tokens):
+                f.write(f"Linha {idx+1}: {t_list}\n")
+        print("\nArquivo de tokens gerado com sucesso.")
+
+        gerador_asm.exportarArquivoAssembly("saida.s")
+        print("Arquivo Assembly 'saida.s' gerado com sucesso.")
+
+if __name__ == "__main__":
+    main()
