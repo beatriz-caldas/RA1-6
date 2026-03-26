@@ -474,6 +474,49 @@ class GeradorAssembly:
         self.codigo_assembly.append(f"    B {label_mod}")
         self.codigo_assembly.append(f"{label_mod_end}:")
         self.codigo_assembly.append("    MOV r9, r6")
+        self.codigo_assembly.append("    LDR r7, =tabela_7seg")
+        self.codigo_assembly.append("    MOV r12, #0")
+        self.codigo_assembly.append("    MOV r14, #0")
+        self.codigo_assembly.append("    LDRB r8, [r7, r9]")
+        self.codigo_assembly.append("    ORR r12, r12, r8")
+        self.codigo_assembly.append("    MOV r8, #0x08")
+        self.codigo_assembly.append("    LSL r8, r8, #8")
+        self.codigo_assembly.append("    ORR r12, r12, r8")
+        for i in range(3):
+            label_div = f"div_loop_{self.contador_labels}"
+            label_end = f"div_end_{self.contador_labels}"
+            self.contador_labels += 1
+            self.codigo_assembly.append("    MOV r5, #0")
+            self.codigo_assembly.append("    MOV r6, r11")
+            self.codigo_assembly.append(f"{label_div}:")
+            self.codigo_assembly.append("    CMP r6, #10")
+            self.codigo_assembly.append(f"    BLT {label_end}")
+            self.codigo_assembly.append("    SUB r6, r6, #10")
+            self.codigo_assembly.append("    ADD r5, r5, #1")
+            self.codigo_assembly.append(f"    B {label_div}")
+            self.codigo_assembly.append(f"{label_end}:")
+            self.codigo_assembly.append("    LDRB r8, [r7, r6]")
+            if i == 0:
+                self.codigo_assembly.append("    LSL r8, r8, #16")
+                self.codigo_assembly.append("    ORR r12, r12, r8")
+            elif i == 1:
+                self.codigo_assembly.append("    LSL r8, r8, #24")
+                self.codigo_assembly.append("    ORR r12, r12, r8")
+            else:
+                self.codigo_assembly.append("    ORR r14, r14, r8")
+            self.codigo_assembly.append("    MOV r11, r5")
+        label_end_sign = f"end_sign_{self.contador_labels}"
+        self.contador_labels += 1
+        self.codigo_assembly.append("    CMP r4, #1")
+        self.codigo_assembly.append(f"    BNE {label_end_sign}")
+        self.codigo_assembly.append("    MOV r8, #0x40")
+        self.codigo_assembly.append("    LSL r8, r8, #8")
+        self.codigo_assembly.append("    ORR r14, r14, r8")
+        self.codigo_assembly.append(f"{label_end_sign}:")
+        self.codigo_assembly.append("    LDR r3, =0xFF200020")
+        self.codigo_assembly.append("    STR r12, [r3]")
+        self.codigo_assembly.append("    LDR r3, =0xFF200030")
+        self.codigo_assembly.append("    STR r14, [r3]")
         self.codigo_assembly.append("")
         self.contador_resultados += 1
 
