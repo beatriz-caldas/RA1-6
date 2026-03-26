@@ -57,6 +57,32 @@ class AnalisadorLexico:
         n = len(linha)
         parenteses_abertos = 0
 
+        def inicia_numero_negativo(i: int) -> bool:
+            """
+            Verifica se o caractere '-' na posição atual deve ser
+            interpretado como início de um número negativo.
+
+            Args:
+                i (int): Índice atual da linha.
+
+            Returns:
+                bool: True se o '-' iniciar um número negativo;
+                False caso contrário.
+            """
+            if linha[i] != "-":
+                return False
+
+            if i + 1 >= n or not linha[i + 1].isdigit():
+                return False
+
+            if i == 0:
+                return True
+
+            if linha[i - 1].isspace() or linha[i - 1] == "(":
+                return True
+
+            return False
+
         def estadoInicial(i: int):
             """
             Estado inicial do autômato.
@@ -73,7 +99,12 @@ class AnalisadorLexico:
             if c == "(" or c == ")":
                 return estadoParenteses, i
 
-            if c in "+-*%^":
+            if c == "-":
+                if inicia_numero_negativo(i):
+                    return estadoNumero, i
+                return estadoOperador, i
+
+            if c in "+*%^":
                 return estadoOperador, i
 
             if c == "/":
@@ -143,10 +174,14 @@ class AnalisadorLexico:
         def estadoNumero(i: int):
             """
             Estado responsável por reconhecer números inteiros
-            e reais com ponto decimal.
+            e reais com ponto decimal, incluindo números negativos.
             """
             lexema = ""
             tem_ponto = False
+
+            if linha[i] == "-":
+                lexema += "-"
+                i += 1
 
             while i < n and (linha[i].isdigit() or linha[i] == "."):
                 if linha[i] == ".":
@@ -158,6 +193,9 @@ class AnalisadorLexico:
 
                 lexema += linha[i]
                 i += 1
+
+            if lexema == "-":
+                raise ValueError("Número malformado: '-' isolado não é número")
 
             if lexema.endswith("."):
                 raise ValueError(f"Número malformado: {lexema}")
