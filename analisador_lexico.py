@@ -555,6 +555,10 @@ class GeradorAssembly:
         self.codigo_assembly.append("    STR r12, [r3]")
         self.codigo_assembly.append("    LDR r3, =0xFF200030")
         self.codigo_assembly.append("    STR r14, [r3]")
+        skip_label = f"ltorg_skip_{self.contador_resultados}"
+        self.codigo_assembly.append(f"    B {skip_label}")
+        self.codigo_assembly.append(".ltorg")
+        self.codigo_assembly.append(f"{skip_label}:")
         self.codigo_assembly.append("")
         self.contador_resultados += 1
 
@@ -571,7 +575,7 @@ class GeradorAssembly:
         asm_final = ["@ Beatriz Caldas", "@ Eduardo Pianovski", "@ Lucas Gasperin", "@ Lucas Sotomaior", "@ Grupo: RA1 6",
                      "@ Link Repositorio: https://github.com/beatriz-caldas/RA1-6", "", ".text", ".global _start", "_start:"]
         asm_final.extend(self.codigo_assembly)
-        asm_final.extend(["fim:", "    B fim", ""])
+        asm_final.extend([".ltorg", "fim:", "    B fim", ""])
         if self.asm_data:
             asm_final.append(".data")
             asm_final.extend(self.asm_data)
