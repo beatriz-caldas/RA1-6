@@ -440,6 +440,40 @@ class GeradorAssembly:
         self.codigo_assembly.append("    RSBLT r1, r1, #0")
         self.codigo_assembly.append("    LDR r2, =0xFF200000")
         self.codigo_assembly.append("    STR r1, [r2]")
+        nome_dez = f"const_num_{self.contador_constantes}"
+        self.contador_constantes += 1
+        self.asm_data.append(f"{nome_dez}: .double 10.0")
+        self.codigo_assembly.append("    VCVT.S32.F64 s0, d0")
+        self.codigo_assembly.append("    VMOV r11, s0")
+        self.codigo_assembly.append(f"    LDR r0, =res_{self.contador_resultados}")
+        self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+        self.codigo_assembly.append(f"    LDR r0, ={nome_dez}")
+        self.codigo_assembly.append("    VLDR.F64 d5, [r0]")
+        self.codigo_assembly.append("    VMUL.F64 d5, d0, d5")
+        self.codigo_assembly.append("    VCVT.S32.F64 s10, d5")
+        self.codigo_assembly.append("    VMOV r10, s10")
+        label_pos = f"pos_{self.contador_labels}"
+        self.contador_labels += 1
+        self.codigo_assembly.append("    MOV r4, #0")
+        self.codigo_assembly.append("    CMP r11, #0")
+        self.codigo_assembly.append(f"    BGE {label_pos}")
+        self.codigo_assembly.append("    RSB r11, r11, #0")
+        self.codigo_assembly.append("    RSB r10, r10, #0")
+        self.codigo_assembly.append("    MOV r4, #1")
+        self.codigo_assembly.append(f"{label_pos}:")
+        label_mod     = f"mod_dec_{self.contador_labels}"
+        label_mod_end = f"mod_dec_end_{self.contador_labels}"
+        self.contador_labels += 1
+        self.codigo_assembly.append("    MOV r6, r10")
+        self.codigo_assembly.append("    MOV r5, #0")
+        self.codigo_assembly.append(f"{label_mod}:")
+        self.codigo_assembly.append("    CMP r6, #10")
+        self.codigo_assembly.append(f"    BLT {label_mod_end}")
+        self.codigo_assembly.append("    SUB r6, r6, #10")
+        self.codigo_assembly.append("    ADD r5, r5, #1")
+        self.codigo_assembly.append(f"    B {label_mod}")
+        self.codigo_assembly.append(f"{label_mod_end}:")
+        self.codigo_assembly.append("    MOV r9, r6")
         self.codigo_assembly.append("")
         self.contador_resultados += 1
 
