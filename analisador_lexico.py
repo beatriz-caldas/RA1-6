@@ -352,7 +352,7 @@ class CalcularExpressao:
                     case "//":
                         if b == 0:
                             raise ZeroDivisionError("Divisão por zero.")
-                        pilha.append(float(int(a) // int(b)))
+                        pilha.append(float(int(a / b)))
                     case "/":
                         if b == 0:
                             raise ZeroDivisionError("Divisão por zero.")
