@@ -57,6 +57,32 @@ class AnalisadorLexico:
         n = len(linha)
         parenteses_abertos = 0
 
+        def inicia_numero_negativo(i: int) -> bool:
+            """
+            Verifica se o caractere '-' na posição atual deve ser
+            interpretado como início de um número negativo.
+
+            Args:
+                i (int): Índice atual da linha.
+
+            Returns:
+                bool: True se o '-' iniciar um número negativo;
+                False caso contrário.
+            """
+            if linha[i] != "-":
+                return False
+
+            if i + 1 >= n or not linha[i + 1].isdigit():
+                return False
+
+            if i == 0:
+                return True
+
+            if linha[i - 1].isspace() or linha[i - 1] == "(":
+                return True
+
+            return False
+
         def estadoInicial(i: int):
             """
             Estado inicial do autômato.
@@ -73,7 +99,12 @@ class AnalisadorLexico:
             if c == "(" or c == ")":
                 return estadoParenteses, i
 
-            if c in "+-*%^":
+            if c == "-":
+                if inicia_numero_negativo(i):
+                    return estadoNumero, i
+                return estadoOperador, i
+
+            if c in "+*%^":
                 return estadoOperador, i
 
             if c == "/":
@@ -143,10 +174,14 @@ class AnalisadorLexico:
         def estadoNumero(i: int):
             """
             Estado responsável por reconhecer números inteiros
-            e reais com ponto decimal.
+            e reais com ponto decimal, incluindo números negativos.
             """
             lexema = ""
             tem_ponto = False
+
+            if linha[i] == "-":
+                lexema += "-"
+                i += 1
 
             while i < n and (linha[i].isdigit() or linha[i] == "."):
                 if linha[i] == ".":
@@ -158,6 +193,9 @@ class AnalisadorLexico:
 
                 lexema += linha[i]
                 i += 1
+
+            if lexema == "-":
+                raise ValueError("Número malformado: '-' isolado não é número")
 
             if lexema.endswith("."):
                 raise ValueError(f"Número malformado: {lexema}")
@@ -401,10 +439,9 @@ class GeradorAssembly:
                     self.codigo_assembly.append("    VMOV.F64 d2, d0")
                     self.codigo_assembly.append("    VCVT.S32.F64 s0, d1")
                     self.codigo_assembly.append("    VMOV r1, s0")
-                    self.codigo_assembly.append("")
                     self.codigo_assembly.append(f"{label}:")
                     self.codigo_assembly.append("    SUB r1, r1, #1")
-                    self.codigo_assembly.append(f"    CMP r1, #0")
+                    self.codigo_assembly.append("    CMP r1, #0")
                     self.codigo_assembly.append(f"    BEQ {end}")
                     self.codigo_assembly.append("    VMUL.F64 d2, d2, d0")
                     self.codigo_assembly.append(f"    B {label}")
@@ -435,6 +472,93 @@ class GeradorAssembly:
         self.codigo_assembly.append("    VPOP {d0}")
         self.codigo_assembly.append(f"    LDR r0, =res_{self.contador_resultados}")
         self.codigo_assembly.append("    VSTR.F64 d0, [r0]")
+        self.codigo_assembly.append("    VCVT.S32.F64 s0, d0")
+        self.codigo_assembly.append("    VMOV r1, s0")
+        self.codigo_assembly.append("    CMP r1, #0")
+        self.codigo_assembly.append("    RSBLT r1, r1, #0")
+        self.codigo_assembly.append("    LDR r2, =0xFF200000")
+        self.codigo_assembly.append("    STR r1, [r2]")
+        nome_dez = f"const_num_{self.contador_constantes}"
+        self.contador_constantes += 1
+        self.asm_data.append(f"{nome_dez}: .double 10.0")
+        self.codigo_assembly.append("    VCVT.S32.F64 s0, d0")
+        self.codigo_assembly.append("    VMOV r11, s0")
+        self.codigo_assembly.append(f"    LDR r0, =res_{self.contador_resultados}")
+        self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
+        self.codigo_assembly.append(f"    LDR r0, ={nome_dez}")
+        self.codigo_assembly.append("    VLDR.F64 d5, [r0]")
+        self.codigo_assembly.append("    VMUL.F64 d5, d0, d5")
+        self.codigo_assembly.append("    VCVT.S32.F64 s10, d5")
+        self.codigo_assembly.append("    VMOV r10, s10")
+        label_pos = f"pos_{self.contador_labels}"
+        self.contador_labels += 1
+        self.codigo_assembly.append("    MOV r4, #0")
+        self.codigo_assembly.append("    CMP r11, #0")
+        self.codigo_assembly.append(f"    BGE {label_pos}")
+        self.codigo_assembly.append("    RSB r11, r11, #0")
+        self.codigo_assembly.append("    RSB r10, r10, #0")
+        self.codigo_assembly.append("    MOV r4, #1")
+        self.codigo_assembly.append(f"{label_pos}:")
+        label_mod     = f"mod_dec_{self.contador_labels}"
+        label_mod_end = f"mod_dec_end_{self.contador_labels}"
+        self.contador_labels += 1
+        self.codigo_assembly.append("    MOV r6, r10")
+        self.codigo_assembly.append("    MOV r5, #0")
+        self.codigo_assembly.append(f"{label_mod}:")
+        self.codigo_assembly.append("    CMP r6, #10")
+        self.codigo_assembly.append(f"    BLT {label_mod_end}")
+        self.codigo_assembly.append("    SUB r6, r6, #10")
+        self.codigo_assembly.append("    ADD r5, r5, #1")
+        self.codigo_assembly.append(f"    B {label_mod}")
+        self.codigo_assembly.append(f"{label_mod_end}:")
+        self.codigo_assembly.append("    MOV r9, r6")
+        self.codigo_assembly.append("    LDR r7, =tabela_7seg")
+        self.codigo_assembly.append("    MOV r12, #0")
+        self.codigo_assembly.append("    MOV r14, #0")
+        self.codigo_assembly.append("    LDRB r8, [r7, r9]")
+        self.codigo_assembly.append("    ORR r12, r12, r8")
+        self.codigo_assembly.append("    MOV r8, #0x08")
+        self.codigo_assembly.append("    LSL r8, r8, #8")
+        self.codigo_assembly.append("    ORR r12, r12, r8")
+        for i in range(3):
+            label_div = f"div_loop_{self.contador_labels}"
+            label_end = f"div_end_{self.contador_labels}"
+            self.contador_labels += 1
+            self.codigo_assembly.append("    MOV r5, #0")
+            self.codigo_assembly.append("    MOV r6, r11")
+            self.codigo_assembly.append(f"{label_div}:")
+            self.codigo_assembly.append("    CMP r6, #10")
+            self.codigo_assembly.append(f"    BLT {label_end}")
+            self.codigo_assembly.append("    SUB r6, r6, #10")
+            self.codigo_assembly.append("    ADD r5, r5, #1")
+            self.codigo_assembly.append(f"    B {label_div}")
+            self.codigo_assembly.append(f"{label_end}:")
+            self.codigo_assembly.append("    LDRB r8, [r7, r6]")
+            if i == 0:
+                self.codigo_assembly.append("    LSL r8, r8, #16")
+                self.codigo_assembly.append("    ORR r12, r12, r8")
+            elif i == 1:
+                self.codigo_assembly.append("    LSL r8, r8, #24")
+                self.codigo_assembly.append("    ORR r12, r12, r8")
+            else:
+                self.codigo_assembly.append("    ORR r14, r14, r8")
+            self.codigo_assembly.append("    MOV r11, r5")
+        label_end_sign = f"end_sign_{self.contador_labels}"
+        self.contador_labels += 1
+        self.codigo_assembly.append("    CMP r4, #1")
+        self.codigo_assembly.append(f"    BNE {label_end_sign}")
+        self.codigo_assembly.append("    MOV r8, #0x40")
+        self.codigo_assembly.append("    LSL r8, r8, #8")
+        self.codigo_assembly.append("    ORR r14, r14, r8")
+        self.codigo_assembly.append(f"{label_end_sign}:")
+        self.codigo_assembly.append("    LDR r3, =0xFF200020")
+        self.codigo_assembly.append("    STR r12, [r3]")
+        self.codigo_assembly.append("    LDR r3, =0xFF200030")
+        self.codigo_assembly.append("    STR r14, [r3]")
+        skip_label = f"ltorg_skip_{self.contador_resultados}"
+        self.codigo_assembly.append(f"    B {skip_label}")
+        self.codigo_assembly.append(".ltorg")
+        self.codigo_assembly.append(f"{skip_label}:")
         self.codigo_assembly.append("")
         self.contador_resultados += 1
 
@@ -451,10 +575,21 @@ class GeradorAssembly:
         asm_final = ["@ Beatriz Caldas", "@ Eduardo Pianovski", "@ Lucas Gasperin", "@ Lucas Sotomaior", "@ Grupo: RA1 6",
                      "@ Link Repositorio: https://github.com/beatriz-caldas/RA1-6", "", ".text", ".global _start", "_start:"]
         asm_final.extend(self.codigo_assembly)
-        asm_final.extend(["fim:", "    B fim", ""])
+        asm_final.extend([".ltorg", "fim:", "    B fim", ""])
         if self.asm_data:
             asm_final.append(".data")
             asm_final.extend(self.asm_data)
+            asm_final.append("tabela_7seg:")
+            asm_final.append("    .byte 0x3F")
+            asm_final.append("    .byte 0x06")
+            asm_final.append("    .byte 0x5B")
+            asm_final.append("    .byte 0x4F")
+            asm_final.append("    .byte 0x66")
+            asm_final.append("    .byte 0x6D")
+            asm_final.append("    .byte 0x7D")
+            asm_final.append("    .byte 0x07")
+            asm_final.append("    .byte 0x7F")
+            asm_final.append("    .byte 0x6F")
             asm_final.append("")
         if self.asm_bss:
             asm_final.append(".bss")
