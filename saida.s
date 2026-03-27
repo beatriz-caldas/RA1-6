@@ -118,10 +118,13 @@ ltorg_skip_0:
     LDR r0, =const_num_3
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    VPOP {d0}
-    LDR r0, =var_MEM
-    VSTR.F64 d0, [r0]
+    LDR r0, =const_num_4
+    VLDR.F64 d0, [r0]
     VPUSH {d0}
+    VPOP {d1}
+    VPOP {d0}
+    VDIV.F64 d2, d0, d1
+    VPUSH {d2}
     VPOP {d0}
     LDR r0, =res_1
     VSTR.F64 d0, [r0]
@@ -135,7 +138,7 @@ ltorg_skip_0:
     VMOV r11, s0
     LDR r0, =res_1
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_4
+    LDR r0, =const_num_5
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
@@ -218,29 +221,17 @@ end_sign_11:
 ltorg_skip_1:
 
     @ NOVA EXPRESSAO RPN
-    LDR r0, =const_num_5
-    VLDR.F64 d0, [r0]
-    VPUSH {d0}
     LDR r0, =const_num_6
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    VPOP {d1}
-    VPOP {d0}
-    VMUL.F64 d2, d0, d1
-    VPUSH {d2}
     LDR r0, =const_num_7
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    LDR r0, =const_num_8
-    VLDR.F64 d0, [r0]
-    VPUSH {d0}
-    VPOP {d1}
-    VPOP {d0}
-    VMUL.F64 d2, d0, d1
-    VPUSH {d2}
     VPOP {d1}
     VPOP {d0}
     VDIV.F64 d2, d0, d1
+    VCVT.S32.F64 s0, d2
+    VCVT.F64.S32 d2, s0
     VPUSH {d2}
     VPOP {d0}
     LDR r0, =res_2
@@ -255,7 +246,7 @@ ltorg_skip_1:
     VMOV r11, s0
     LDR r0, =res_2
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_9
+    LDR r0, =const_num_8
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
@@ -338,9 +329,24 @@ end_sign_17:
 ltorg_skip_2:
 
     @ NOVA EXPRESSAO RPN
-    LDR r0, =var_MEM
+    LDR r0, =const_num_9
     VLDR.F64 d0, [r0]
     VPUSH {d0}
+    LDR r0, =const_num_10
+    VLDR.F64 d0, [r0]
+    VPUSH {d0}
+    VPOP {d1}
+    VPOP {d0}
+    VCVT.S32.F64 s0, d0
+    VCVT.S32.F64 s2, d1
+    VCVT.F64.S32 d0, s0
+    VCVT.F64.S32 d1, s2
+    VDIV.F64 d3, d0, d1
+    VCVT.S32.F64 s4, d3
+    VCVT.F64.S32 d3, s4
+    VMUL.F64 d3, d3, d1
+    VSUB.F64 d2, d0, d3
+    VPUSH {d2}
     VPOP {d0}
     LDR r0, =res_3
     VSTR.F64 d0, [r0]
@@ -354,7 +360,7 @@ ltorg_skip_2:
     VMOV r11, s0
     LDR r0, =res_3
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_10
+    LDR r0, =const_num_11
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
@@ -437,12 +443,25 @@ end_sign_23:
 ltorg_skip_3:
 
     @ NOVA EXPRESSAO RPN
-    LDR r0, =const_num_11
+    LDR r0, =const_num_12
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    LDR r0, =res_2
+    LDR r0, =const_num_13
     VLDR.F64 d0, [r0]
     VPUSH {d0}
+    VPOP {d1}
+    VPOP {d0}
+    VMOV.F64 d2, d0
+    VCVT.S32.F64 s0, d1
+    VMOV r1, s0
+pow_loop_24:
+    SUB r1, r1, #1
+    CMP r1, #0
+    BEQ pow_end_24
+    VMUL.F64 d2, d2, d0
+    B pow_loop_24
+pow_end_24:
+    VPUSH {d2}
     VPOP {d0}
     LDR r0, =res_4
     VSTR.F64 d0, [r0]
@@ -456,27 +475,27 @@ ltorg_skip_3:
     VMOV r11, s0
     LDR r0, =res_4
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_12
+    LDR r0, =const_num_14
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
     VMOV r10, s10
     MOV r4, #0
     CMP r11, #0
-    BGE pos_24
+    BGE pos_25
     RSB r11, r11, #0
     RSB r10, r10, #0
     MOV r4, #1
-pos_24:
+pos_25:
     MOV r6, r10
     MOV r5, #0
-mod_dec_25:
+mod_dec_26:
     CMP r6, #10
-    BLT mod_dec_end_25
+    BLT mod_dec_end_26
     SUB r6, r6, #10
     ADD r5, r5, #1
-    B mod_dec_25
-mod_dec_end_25:
+    B mod_dec_26
+mod_dec_end_26:
     MOV r9, r6
     LDR r7, =tabela_7seg
     MOV r12, #0
@@ -488,19 +507,6 @@ mod_dec_end_25:
     ORR r12, r12, r8
     MOV r5, #0
     MOV r6, r11
-div_loop_26:
-    CMP r6, #10
-    BLT div_end_26
-    SUB r6, r6, #10
-    ADD r5, r5, #1
-    B div_loop_26
-div_end_26:
-    LDRB r8, [r7, r6]
-    LSL r8, r8, #16
-    ORR r12, r12, r8
-    MOV r11, r5
-    MOV r5, #0
-    MOV r6, r11
 div_loop_27:
     CMP r6, #10
     BLT div_end_27
@@ -509,7 +515,7 @@ div_loop_27:
     B div_loop_27
 div_end_27:
     LDRB r8, [r7, r6]
-    LSL r8, r8, #24
+    LSL r8, r8, #16
     ORR r12, r12, r8
     MOV r11, r5
     MOV r5, #0
@@ -522,14 +528,27 @@ div_loop_28:
     B div_loop_28
 div_end_28:
     LDRB r8, [r7, r6]
+    LSL r8, r8, #24
+    ORR r12, r12, r8
+    MOV r11, r5
+    MOV r5, #0
+    MOV r6, r11
+div_loop_29:
+    CMP r6, #10
+    BLT div_end_29
+    SUB r6, r6, #10
+    ADD r5, r5, #1
+    B div_loop_29
+div_end_29:
+    LDRB r8, [r7, r6]
     ORR r14, r14, r8
     MOV r11, r5
     CMP r4, #1
-    BNE end_sign_29
+    BNE end_sign_30
     MOV r8, #0x40
     LSL r8, r8, #8
     ORR r14, r14, r8
-end_sign_29:
+end_sign_30:
     LDR r3, =0xFF200020
     STR r12, [r3]
     LDR r3, =0xFF200030
@@ -539,18 +558,13 @@ end_sign_29:
 ltorg_skip_4:
 
     @ NOVA EXPRESSAO RPN
-    LDR r0, =const_num_13
+    LDR r0, =const_num_15
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    LDR r0, =const_num_14
-    VLDR.F64 d0, [r0]
-    VPUSH {d0}
-    VPOP {d1}
     VPOP {d0}
-    VDIV.F64 d2, d0, d1
-    VCVT.S32.F64 s0, d2
-    VCVT.F64.S32 d2, s0
-    VPUSH {d2}
+    LDR r0, =var_MEM
+    VSTR.F64 d0, [r0]
+    VPUSH {d0}
     VPOP {d0}
     LDR r0, =res_5
     VSTR.F64 d0, [r0]
@@ -564,27 +578,27 @@ ltorg_skip_4:
     VMOV r11, s0
     LDR r0, =res_5
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_15
+    LDR r0, =const_num_16
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
     VMOV r10, s10
     MOV r4, #0
     CMP r11, #0
-    BGE pos_30
+    BGE pos_31
     RSB r11, r11, #0
     RSB r10, r10, #0
     MOV r4, #1
-pos_30:
+pos_31:
     MOV r6, r10
     MOV r5, #0
-mod_dec_31:
+mod_dec_32:
     CMP r6, #10
-    BLT mod_dec_end_31
+    BLT mod_dec_end_32
     SUB r6, r6, #10
     ADD r5, r5, #1
-    B mod_dec_31
-mod_dec_end_31:
+    B mod_dec_32
+mod_dec_end_32:
     MOV r9, r6
     LDR r7, =tabela_7seg
     MOV r12, #0
@@ -596,19 +610,6 @@ mod_dec_end_31:
     ORR r12, r12, r8
     MOV r5, #0
     MOV r6, r11
-div_loop_32:
-    CMP r6, #10
-    BLT div_end_32
-    SUB r6, r6, #10
-    ADD r5, r5, #1
-    B div_loop_32
-div_end_32:
-    LDRB r8, [r7, r6]
-    LSL r8, r8, #16
-    ORR r12, r12, r8
-    MOV r11, r5
-    MOV r5, #0
-    MOV r6, r11
 div_loop_33:
     CMP r6, #10
     BLT div_end_33
@@ -617,7 +618,7 @@ div_loop_33:
     B div_loop_33
 div_end_33:
     LDRB r8, [r7, r6]
-    LSL r8, r8, #24
+    LSL r8, r8, #16
     ORR r12, r12, r8
     MOV r11, r5
     MOV r5, #0
@@ -630,14 +631,27 @@ div_loop_34:
     B div_loop_34
 div_end_34:
     LDRB r8, [r7, r6]
+    LSL r8, r8, #24
+    ORR r12, r12, r8
+    MOV r11, r5
+    MOV r5, #0
+    MOV r6, r11
+div_loop_35:
+    CMP r6, #10
+    BLT div_end_35
+    SUB r6, r6, #10
+    ADD r5, r5, #1
+    B div_loop_35
+div_end_35:
+    LDRB r8, [r7, r6]
     ORR r14, r14, r8
     MOV r11, r5
     CMP r4, #1
-    BNE end_sign_35
+    BNE end_sign_36
     MOV r8, #0x40
     LSL r8, r8, #8
     ORR r14, r14, r8
-end_sign_35:
+end_sign_36:
     LDR r3, =0xFF200020
     STR r12, [r3]
     LDR r3, =0xFF200030
@@ -647,24 +661,9 @@ end_sign_35:
 ltorg_skip_5:
 
     @ NOVA EXPRESSAO RPN
-    LDR r0, =const_num_16
+    LDR r0, =var_MEM
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    LDR r0, =const_num_17
-    VLDR.F64 d0, [r0]
-    VPUSH {d0}
-    VPOP {d1}
-    VPOP {d0}
-    VCVT.S32.F64 s0, d0
-    VCVT.S32.F64 s2, d1
-    VCVT.F64.S32 d0, s0
-    VCVT.F64.S32 d1, s2
-    VDIV.F64 d3, d0, d1
-    VCVT.S32.F64 s4, d3
-    VCVT.F64.S32 d3, s4
-    VMUL.F64 d3, d3, d1
-    VSUB.F64 d2, d0, d3
-    VPUSH {d2}
     VPOP {d0}
     LDR r0, =res_6
     VSTR.F64 d0, [r0]
@@ -678,27 +677,27 @@ ltorg_skip_5:
     VMOV r11, s0
     LDR r0, =res_6
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_18
+    LDR r0, =const_num_17
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
     VMOV r10, s10
     MOV r4, #0
     CMP r11, #0
-    BGE pos_36
+    BGE pos_37
     RSB r11, r11, #0
     RSB r10, r10, #0
     MOV r4, #1
-pos_36:
+pos_37:
     MOV r6, r10
     MOV r5, #0
-mod_dec_37:
+mod_dec_38:
     CMP r6, #10
-    BLT mod_dec_end_37
+    BLT mod_dec_end_38
     SUB r6, r6, #10
     ADD r5, r5, #1
-    B mod_dec_37
-mod_dec_end_37:
+    B mod_dec_38
+mod_dec_end_38:
     MOV r9, r6
     LDR r7, =tabela_7seg
     MOV r12, #0
@@ -710,19 +709,6 @@ mod_dec_end_37:
     ORR r12, r12, r8
     MOV r5, #0
     MOV r6, r11
-div_loop_38:
-    CMP r6, #10
-    BLT div_end_38
-    SUB r6, r6, #10
-    ADD r5, r5, #1
-    B div_loop_38
-div_end_38:
-    LDRB r8, [r7, r6]
-    LSL r8, r8, #16
-    ORR r12, r12, r8
-    MOV r11, r5
-    MOV r5, #0
-    MOV r6, r11
 div_loop_39:
     CMP r6, #10
     BLT div_end_39
@@ -731,7 +717,7 @@ div_loop_39:
     B div_loop_39
 div_end_39:
     LDRB r8, [r7, r6]
-    LSL r8, r8, #24
+    LSL r8, r8, #16
     ORR r12, r12, r8
     MOV r11, r5
     MOV r5, #0
@@ -744,14 +730,27 @@ div_loop_40:
     B div_loop_40
 div_end_40:
     LDRB r8, [r7, r6]
+    LSL r8, r8, #24
+    ORR r12, r12, r8
+    MOV r11, r5
+    MOV r5, #0
+    MOV r6, r11
+div_loop_41:
+    CMP r6, #10
+    BLT div_end_41
+    SUB r6, r6, #10
+    ADD r5, r5, #1
+    B div_loop_41
+div_end_41:
+    LDRB r8, [r7, r6]
     ORR r14, r14, r8
     MOV r11, r5
     CMP r4, #1
-    BNE end_sign_41
+    BNE end_sign_42
     MOV r8, #0x40
     LSL r8, r8, #8
     ORR r14, r14, r8
-end_sign_41:
+end_sign_42:
     LDR r3, =0xFF200020
     STR r12, [r3]
     LDR r3, =0xFF200030
@@ -761,25 +760,12 @@ end_sign_41:
 ltorg_skip_6:
 
     @ NOVA EXPRESSAO RPN
-    LDR r0, =const_num_19
+    LDR r0, =const_num_18
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    LDR r0, =const_num_20
+    LDR r0, =res_5
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    VPOP {d1}
-    VPOP {d0}
-    VMOV.F64 d2, d0
-    VCVT.S32.F64 s0, d1
-    VMOV r1, s0
-pow_loop_42:
-    SUB r1, r1, #1
-    CMP r1, #0
-    BEQ pow_end_42
-    VMUL.F64 d2, d2, d0
-    B pow_loop_42
-pow_end_42:
-    VPUSH {d2}
     VPOP {d0}
     LDR r0, =res_7
     VSTR.F64 d0, [r0]
@@ -793,7 +779,7 @@ pow_end_42:
     VMOV r11, s0
     LDR r0, =res_7
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_21
+    LDR r0, =const_num_19
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
@@ -876,10 +862,24 @@ end_sign_48:
 ltorg_skip_7:
 
     @ NOVA EXPRESSAO RPN
-    LDR r0, =const_num_22
+    LDR r0, =var_MEM
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    LDR r0, =const_num_23
+    LDR r0, =const_num_20
+    VLDR.F64 d0, [r0]
+    VPUSH {d0}
+    VPOP {d1}
+    VPOP {d0}
+    VSUB.F64 d2, d0, d1
+    VPUSH {d2}
+    LDR r0, =const_num_21
+    VLDR.F64 d0, [r0]
+    VPUSH {d0}
+    VPOP {d1}
+    VPOP {d0}
+    VMUL.F64 d2, d0, d1
+    VPUSH {d2}
+    LDR r0, =const_num_22
     VLDR.F64 d0, [r0]
     VPUSH {d0}
     VPOP {d1}
@@ -899,7 +899,7 @@ ltorg_skip_7:
     VMOV r11, s0
     LDR r0, =res_8
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_24
+    LDR r0, =const_num_23
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
@@ -982,12 +982,30 @@ end_sign_54:
 ltorg_skip_8:
 
     @ NOVA EXPRESSAO RPN
+    LDR r0, =const_num_24
+    VLDR.F64 d0, [r0]
+    VPUSH {d0}
     LDR r0, =const_num_25
     VLDR.F64 d0, [r0]
     VPUSH {d0}
-    LDR r0, =res_8
+    VPOP {d1}
+    VPOP {d0}
+    VDIV.F64 d2, d0, d1
+    VPUSH {d2}
+    LDR r0, =const_num_26
     VLDR.F64 d0, [r0]
     VPUSH {d0}
+    LDR r0, =const_num_27
+    VLDR.F64 d0, [r0]
+    VPUSH {d0}
+    VPOP {d1}
+    VPOP {d0}
+    VADD.F64 d2, d0, d1
+    VPUSH {d2}
+    VPOP {d1}
+    VPOP {d0}
+    VMUL.F64 d2, d0, d1
+    VPUSH {d2}
     VPOP {d0}
     LDR r0, =res_9
     VSTR.F64 d0, [r0]
@@ -1001,7 +1019,7 @@ ltorg_skip_8:
     VMOV r11, s0
     LDR r0, =res_9
     VLDR.F64 d0, [r0]
-    LDR r0, =const_num_26
+    LDR r0, =const_num_28
     VLDR.F64 d5, [r0]
     VMUL.F64 d5, d0, d5
     VCVT.S32.F64 s10, d5
@@ -1083,38 +1101,149 @@ end_sign_60:
 .ltorg
 ltorg_skip_9:
 
+    @ NOVA EXPRESSAO RPN
+    LDR r0, =const_num_29
+    VLDR.F64 d0, [r0]
+    VPUSH {d0}
+    LDR r0, =const_num_30
+    VLDR.F64 d0, [r0]
+    VPUSH {d0}
+    VPOP {d1}
+    VPOP {d0}
+    VADD.F64 d2, d0, d1
+    VPUSH {d2}
+    VPOP {d0}
+    LDR r0, =res_10
+    VSTR.F64 d0, [r0]
+    VCVT.S32.F64 s0, d0
+    VMOV r1, s0
+    CMP r1, #0
+    RSBLT r1, r1, #0
+    LDR r2, =0xFF200000
+    STR r1, [r2]
+    VCVT.S32.F64 s0, d0
+    VMOV r11, s0
+    LDR r0, =res_10
+    VLDR.F64 d0, [r0]
+    LDR r0, =const_num_31
+    VLDR.F64 d5, [r0]
+    VMUL.F64 d5, d0, d5
+    VCVT.S32.F64 s10, d5
+    VMOV r10, s10
+    MOV r4, #0
+    CMP r11, #0
+    BGE pos_61
+    RSB r11, r11, #0
+    RSB r10, r10, #0
+    MOV r4, #1
+pos_61:
+    MOV r6, r10
+    MOV r5, #0
+mod_dec_62:
+    CMP r6, #10
+    BLT mod_dec_end_62
+    SUB r6, r6, #10
+    ADD r5, r5, #1
+    B mod_dec_62
+mod_dec_end_62:
+    MOV r9, r6
+    LDR r7, =tabela_7seg
+    MOV r12, #0
+    MOV r14, #0
+    LDRB r8, [r7, r9]
+    ORR r12, r12, r8
+    MOV r8, #0x08
+    LSL r8, r8, #8
+    ORR r12, r12, r8
+    MOV r5, #0
+    MOV r6, r11
+div_loop_63:
+    CMP r6, #10
+    BLT div_end_63
+    SUB r6, r6, #10
+    ADD r5, r5, #1
+    B div_loop_63
+div_end_63:
+    LDRB r8, [r7, r6]
+    LSL r8, r8, #16
+    ORR r12, r12, r8
+    MOV r11, r5
+    MOV r5, #0
+    MOV r6, r11
+div_loop_64:
+    CMP r6, #10
+    BLT div_end_64
+    SUB r6, r6, #10
+    ADD r5, r5, #1
+    B div_loop_64
+div_end_64:
+    LDRB r8, [r7, r6]
+    LSL r8, r8, #24
+    ORR r12, r12, r8
+    MOV r11, r5
+    MOV r5, #0
+    MOV r6, r11
+div_loop_65:
+    CMP r6, #10
+    BLT div_end_65
+    SUB r6, r6, #10
+    ADD r5, r5, #1
+    B div_loop_65
+div_end_65:
+    LDRB r8, [r7, r6]
+    ORR r14, r14, r8
+    MOV r11, r5
+    CMP r4, #1
+    BNE end_sign_66
+    MOV r8, #0x40
+    LSL r8, r8, #8
+    ORR r14, r14, r8
+end_sign_66:
+    LDR r3, =0xFF200020
+    STR r12, [r3]
+    LDR r3, =0xFF200030
+    STR r14, [r3]
+    B ltorg_skip_10
+.ltorg
+ltorg_skip_10:
+
 .ltorg
 fim:
     B fim
 
 .data
-const_num_0: .double 3.14
-const_num_1: .double 2.0
+const_num_0: .double 2.5
+const_num_1: .double 2.5
 const_num_2: .double 10.0
-const_num_3: .double 5.0
-const_num_4: .double 10.0
-const_num_5: .double 2
-const_num_6: .double 3
-const_num_7: .double 4
-const_num_8: .double 5
-const_num_9: .double 10.0
-const_num_10: .double 10.0
-const_num_11: .double 2
-const_num_12: .double 10.0
-const_num_13: .double 10
-const_num_14: .double 2
-const_num_15: .double 10.0
-const_num_16: .double 10
-const_num_17: .double 3
-const_num_18: .double 10.0
-const_num_19: .double 2
-const_num_20: .double 4
-const_num_21: .double 10.0
-const_num_22: .double 10.5
-const_num_23: .double 2.5
-const_num_24: .double 10.0
-const_num_25: .double 1
-const_num_26: .double 10.0
+const_num_3: .double 100
+const_num_4: .double 10
+const_num_5: .double 10.0
+const_num_6: .double 7
+const_num_7: .double 2
+const_num_8: .double 10.0
+const_num_9: .double 7
+const_num_10: .double 2
+const_num_11: .double 10.0
+const_num_12: .double 3
+const_num_13: .double 3
+const_num_14: .double 10.0
+const_num_15: .double 55.5
+const_num_16: .double 10.0
+const_num_17: .double 10.0
+const_num_18: .double 2
+const_num_19: .double 10.0
+const_num_20: .double 0.5
+const_num_21: .double 2
+const_num_22: .double 10
+const_num_23: .double 10.0
+const_num_24: .double 10
+const_num_25: .double 2
+const_num_26: .double 3
+const_num_27: .double 1
+const_num_28: .double 10.0
+const_num_29: .double 10
+const_num_30: .double 10
+const_num_31: .double 10.0
 tabela_7seg:
     .byte 0x3F
     .byte 0x06
@@ -1129,13 +1258,14 @@ tabela_7seg:
 
 .bss
 res_7: .space 8
-res_5: .space 8
 res_2: .space 8
-res_6: .space 8
-res_4: .space 8
-var_MEM: .space 8
-res_0: .space 8
 res_3: .space 8
-res_9: .space 8
 res_1: .space 8
+res_9: .space 8
+var_MEM: .space 8
+res_6: .space 8
 res_8: .space 8
+res_0: .space 8
+res_5: .space 8
+res_10: .space 8
+res_4: .space 8
