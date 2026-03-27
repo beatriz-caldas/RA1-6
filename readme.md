@@ -4,10 +4,10 @@
 - **Disciplina**: Construção de Interpretadores
 - **Professor**: Frank Coelho de Alcantara
 - **Integrantes do Grupo**:
-    - Beatriz Caldas (beatriz-caldas)
-    - Eduardo Pianovski (DuduPNetto)
-    - Lucas Gasperin (Lucas-PG)
-    - Lucas Sotomaior (LucasSotomaiorAPereira)
+    - Beatriz Caldas (github: beatriz-caldas)
+    - Eduardo Pianovski (github: DuduPNetto)
+    - Lucas Gasperin (github: Lucas-PG)
+    - Lucas Sotomaior (github: LucasSotomaiorAPereira)
 
 ## Visão Geral
 
