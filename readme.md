@@ -1,13 +1,13 @@
 # Compilador de Expressões RPN para ARMv7
 
-## Integrantes do Grupo (RA1-6)
-
-* Beatriz Caldas (beatriz-caldas)
-* Eduardo Pianovski (DuduPNetto)
-* Lucas Gasperin (Lucas-PG)
-* Lucas Sotomaior (LucasSotomaiorAPereira)
-
----
+- **Instituição**: PUCPR, Pontifícia Universidade Católica do Paraná.
+- **Disciplina**: Construção de Interpretadores
+- **Professor**: Frank Coelho de Alcantara
+- **Integrantes do Grupo**:
+    - Beatriz Caldas (beatriz-caldas)
+    - Eduardo Pianovski (DuduPNetto)
+    - Lucas Gasperin (Lucas-PG)
+    - Lucas Sotomaior (LucasSotomaiorAPereira)
 
 ## Visão Geral
 
@@ -46,6 +46,8 @@ A avaliação usa uma pilha para processar os tokens em ordem. A lógica é:
 Ao final, a pilha deve conter exatamente um valor `float`; qualquer outra situação é tratada como expressão mal formada.
 
 As operações suportadas são `+`, `-`, `*`, `/`, `//`, `%` e `^`. Divisão por zero é detectada em tempo de execução. Para `^`, o expoente deve ser um inteiro positivo.
+
+Importante: A execução em Python serve para validar as expressões e exibir os resultados no terminal. O código Assembly gerado é o programa que de fato executa os cálculos no CPulator ARMv7.
 
 ### Etapa 3 — Gerador de Assembly (`gerarAssembly`)
 
