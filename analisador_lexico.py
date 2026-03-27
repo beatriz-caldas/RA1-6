@@ -389,7 +389,7 @@ class GeradorAssembly:
     def gerarAssembly(self, tokens: list):
         """
         Traduz os tokens RPN para uma Máquina de Pilha em ARMv7.
-        
+
         Args:
             tokens (list): A lista de tokens RPN.
 
@@ -400,29 +400,29 @@ class GeradorAssembly:
         prev_valor = None
         prev_tipo = None
         for tipo, valor in tokens:
-            if tipo == 'NUM':
+            if tipo == "NUM":
                 nome_constante = f"const_num_{self.contador_constantes}"
                 self.contador_constantes += 1
                 self.asm_data.append(f"{nome_constante}: .double {valor}")
                 self.codigo_assembly.append(f"    LDR r0, ={nome_constante}")
                 self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
                 self.codigo_assembly.append("    VPUSH {d0}")
-            elif tipo == 'OP':
+            elif tipo == "OP":
                 self.codigo_assembly.append("    VPOP {d1}")
                 self.codigo_assembly.append("    VPOP {d0}")
-                if valor == '+':
+                if valor == "+":
                     self.codigo_assembly.append("    VADD.F64 d2, d0, d1")
-                elif valor == '-':
+                elif valor == "-":
                     self.codigo_assembly.append("    VSUB.F64 d2, d0, d1")
-                elif valor == '*':
+                elif valor == "*":
                     self.codigo_assembly.append("    VMUL.F64 d2, d0, d1")
-                elif valor == '/':
+                elif valor == "/":
                     self.codigo_assembly.append("    VDIV.F64 d2, d0, d1")
-                elif valor == '//':
+                elif valor == "//":
                     self.codigo_assembly.append("    VDIV.F64 d2, d0, d1")
                     self.codigo_assembly.append("    VCVT.S32.F64 s0, d2")
                     self.codigo_assembly.append("    VCVT.F64.S32 d2, s0")
-                elif valor == '%':
+                elif valor == "%":
                     self.codigo_assembly.append("    VCVT.S32.F64 s0, d0")
                     self.codigo_assembly.append("    VCVT.S32.F64 s2, d1")
                     self.codigo_assembly.append("    VCVT.F64.S32 d0, s0")
@@ -432,7 +432,7 @@ class GeradorAssembly:
                     self.codigo_assembly.append("    VCVT.F64.S32 d3, s4")
                     self.codigo_assembly.append("    VMUL.F64 d3, d3, d1")
                     self.codigo_assembly.append("    VSUB.F64 d2, d0, d3")
-                elif valor == '^':
+                elif valor == "^":
                     label = f"pow_loop_{self.contador_labels}"
                     end = f"pow_end_{self.contador_labels}"
                     self.contador_labels += 1
@@ -447,16 +447,16 @@ class GeradorAssembly:
                     self.codigo_assembly.append(f"    B {label}")
                     self.codigo_assembly.append(f"{end}:")
                 self.codigo_assembly.append("    VPUSH {d2}")
-            elif tipo == 'CMD':
+            elif tipo == "CMD":
                 linha = (self.contador_resultados) - int(prev_valor)
                 if linha < 0:
                     raise ValueError("RES referencia resultado inexistente")
                 self.codigo_assembly.append(f"    LDR r0, =res_{linha}")
                 self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
                 self.codigo_assembly.append("    VPUSH {d0}")
-            elif tipo == 'VAR':
+            elif tipo == "VAR":
                 self.asm_bss.add(valor)
-                if prev_tipo == 'AP':
+                if prev_tipo == "AP":
                     self.codigo_assembly.append(f"    LDR r0, =var_{valor}")
                     self.codigo_assembly.append("    VLDR.F64 d0, [r0]")
                     self.codigo_assembly.append("    VPUSH {d0}")
@@ -499,7 +499,7 @@ class GeradorAssembly:
         self.codigo_assembly.append("    RSB r10, r10, #0")
         self.codigo_assembly.append("    MOV r4, #1")
         self.codigo_assembly.append(f"{label_pos}:")
-        label_mod     = f"mod_dec_{self.contador_labels}"
+        label_mod = f"mod_dec_{self.contador_labels}"
         label_mod_end = f"mod_dec_end_{self.contador_labels}"
         self.contador_labels += 1
         self.codigo_assembly.append("    MOV r6, r10")
@@ -572,8 +572,18 @@ class GeradorAssembly:
         Returns:
             None
         """
-        asm_final = ["@ Beatriz Caldas", "@ Eduardo Pianovski", "@ Lucas Gasperin", "@ Lucas Sotomaior", "@ Grupo: RA1 6",
-                     "@ Link Repositorio: https://github.com/beatriz-caldas/RA1-6", "", ".text", ".global _start", "_start:"]
+        asm_final = [
+            "@ Beatriz Caldas",
+            "@ Eduardo Pianovski",
+            "@ Lucas Gasperin",
+            "@ Lucas Sotomaior",
+            "@ Grupo: RA1 6",
+            "@ Link Repositorio: https://github.com/beatriz-caldas/RA1-6",
+            "",
+            ".text",
+            ".global _start",
+            "_start:",
+        ]
         asm_final.extend(self.codigo_assembly)
         asm_final.extend([".ltorg", "fim:", "    B fim", ""])
         if self.asm_data:
@@ -601,24 +611,22 @@ class GeradorAssembly:
         with open(nome_saida, "w", encoding="utf-8") as file:
             file.write("\n".join(asm_final))
 
+
 def testar_fsm_lexico() -> None:
     """
     Testes unitários para validar o analisador léxico.
     """
     lex = AnalisadorLexico()
-    
-    casos_sucesso = [
-        "(3.14 2.0 +)",
-        "RES 1 +",
-        "VAR //",
-        "10 3 %"
-    ]
+
+    casos_sucesso = ["(3.14 2.0 +)", "RES 1 +", "VAR //", "10 3 %"]
 
     for caso in casos_sucesso:
         tokens = []
         try:
             lex.parseExpressao(caso, tokens)
-            assert len(tokens) > 0, f"Falha: O FSM não gerou tokens para uma entrada válida: '{caso}'."
+            assert (
+                len(tokens) > 0
+            ), f"Falha: O FSM não gerou tokens para uma entrada válida: '{caso}'."
         except ValueError as e:
             print(f"Falha inesperada no teste de sucesso '{caso}': {e}")
 
@@ -626,18 +634,17 @@ def testar_fsm_lexico() -> None:
         (".5", "Número malformado: número não pode começar com ponto"),
         ("var", "Identificador inválido: 'v'. Use apenas letras maiúsculas"),
         ("3 @ 2", "Caractere léxico inválido: @"),
-        
         ("3 2 + )", "Parênteses desbalanceados: ')' sem '(' correspondente"),
-        
         ("3.14.15", "Número malformado: múltiplos pontos em '3.14.'"),
         ("3.", "Número malformado: 3."),
         ("3,14", "Número malformado: use ponto em vez de vírgula em '3,'"),
         ("3A", "Token inválido: número não pode ser seguido de letras em '3A'"),
-        
         ("VAr", "Identificador inválido: 'VAr'. Use apenas letras maiúsculas"),
-        ("VAR1", "Identificador inválido: 'VAR1'. Letras e números não podem ficar juntos"),
-        
-        ("( 3 2 +", "Parênteses desbalanceados na expressão")
+        (
+            "VAR1",
+            "Identificador inválido: 'VAR1'. Letras e números não podem ficar juntos",
+        ),
+        ("( 3 2 +", "Parênteses desbalanceados na expressão"),
     ]
 
     for caso, erro_esperado in casos_erro:
@@ -647,12 +654,17 @@ def testar_fsm_lexico() -> None:
             lex.parseExpressao(caso, tokens)
             passou_sem_erro = True
         except ValueError as e:
-            assert str(e) == erro_esperado, f"Erro divergente para '{caso}'.\nEsperado: '{erro_esperado}'\nObtido: '{e}'"
-        
+            assert (
+                str(e) == erro_esperado
+            ), f"Erro divergente para '{caso}'.\nEsperado: '{erro_esperado}'\nObtido: '{e}'"
+
         if passou_sem_erro:
-            print(f"Falha no teste: A expressão '{caso}' deveria ter falhado, mas passou.")
+            print(
+                f"Falha no teste: A expressão '{caso}' deveria ter falhado, mas passou."
+            )
 
     print("Testes unitários do Analisador Léxico concluídos com sucesso.\n")
+
 
 def exibirResultados(resultados: list) -> None:
     """
@@ -664,9 +676,12 @@ def exibirResultados(resultados: list) -> None:
         if res != None:
             print(f"Linha {i}: {res:.1f}")
 
-def main():   
+
+def main():
     if len(sys.argv) != 2:
-        print("Por favor, entre com o nome do arquivo de teste, e apenas o nome do arquivo de teste.")
+        print(
+            "Por favor, entre com o nome do arquivo de teste, e apenas o nome do arquivo de teste."
+        )
         print("Ex.: python analisador_lexico.py teste1.txt")
         sys.exit(1)
 
@@ -687,17 +702,17 @@ def main():
         tokens = []
         try:
             lexico.parseExpressao(linha, tokens)
-            
+
             resultado = calc.executarExpressao(tokens)
 
             gerador_asm.gerarAssembly(tokens)
 
             todos_os_tokens.append(tokens)
 
-            resultados[i+1] = resultado
-            
+            resultados[i + 1] = resultado
+
         except Exception as e:
-            resultados[i+1] = None
+            resultados[i + 1] = None
             print(f"Erro na linha {i+1}: {linha.strip()}\n  -> {e}\n")
 
     exibirResultados(resultados)
@@ -710,6 +725,7 @@ def main():
 
         gerador_asm.exportarArquivoAssembly("saida.s")
         print("Arquivo Assembly 'saida.s' gerado com sucesso.")
+
 
 if __name__ == "__main__":
     main()
