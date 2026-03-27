@@ -81,12 +81,22 @@ A função `testar_fsm_lexico()` é executada automaticamente toda vez que o pro
 
 **Entradas válidas testadas:**
 
-```
-(3.14 2.0 +)
-RES 1 +
-VAR //
-10 3 %
-```
+| Entrada | O que cobre |
+| :--- | :--- |
+| `(3.14 2.0 +)` | Floats com operador `+` |
+| `(3.14 2.0 -)` | Operador `-` |
+| `(3.14 2.0 *)` | Operador `*` |
+| `(7.0 2.0 /)` | Operador `/` (divisão real) |
+| `(7.0 2.0 //)` | Operador `//` (divisão inteira) |
+| `10 3 %` | Inteiros com operador `%` |
+| `(2.0 3.0 ^)` | Operador `^` (potenciação) |
+| `(-3.14 2.0 +)` | Número negativo |
+| `((2.0 3.0 *) 4.0 +)` | Expressão aninhada |
+| `(5.0 MEM)` | Comando de armazenamento em variável |
+| `(MEM)` | Comando de leitura de variável |
+| `(2 RES)` | Comando `RES` completo |
+| `RES 1 +` | Keyword `RES` isolada |
+| `VAR //` | Identificador maiúsculo |
 
 **Entradas inválidas testadas** (cada uma deve levantar o erro exato esperado):
 

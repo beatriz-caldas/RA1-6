@@ -352,7 +352,7 @@ class CalcularExpressao:
                     case "//":
                         if b == 0:
                             raise ZeroDivisionError("Divisão por zero.")
-                        pilha.append(float(int(a) // int(b)))
+                        pilha.append(float(int(a / b)))
                     case "/":
                         if b == 0:
                             raise ZeroDivisionError("Divisão por zero.")
@@ -618,7 +618,22 @@ def testar_fsm_lexico() -> None:
     """
     lex = AnalisadorLexico()
 
-    casos_sucesso = ["(3.14 2.0 +)", "RES 1 +", "VAR //", "10 3 %"]
+    casos_sucesso = [
+        "(3.14 2.0 +)",
+        "(3.14 2.0 -)",
+        "(3.14 2.0 *)",
+        "(7.0 2.0 /)",
+        "(7.0 2.0 //)",
+        "10 3 %",
+        "(2.0 3.0 ^)",
+        "(-3.14 2.0 +)",
+        "((2.0 3.0 *) 4.0 +)",
+        "(5.0 MEM)",
+        "(MEM)",
+        "(2 RES)",
+        "RES 1 +",
+        "VAR //",
+    ]
 
     for caso in casos_sucesso:
         tokens = []
