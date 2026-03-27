@@ -9,6 +9,14 @@
     - Lucas Gasperin (github: Lucas-PG)
     - Lucas Sotomaior (github: LucasSotomaiorAPereira)
 
+Veja:
+
+- [Arquitetura do Sistema](#arquitetura-do-sistema)
+- [Testes](#testes-do-analisador-léxico)
+- [Pré-requisitos](#pré-requisitos)
+- [Como Executar](#como-executar)
+- [Como Testar o Programa](#como-testar-o-programa)
+
 ## Visão Geral
 
 Este projeto implementa um compilador simples para uma linguagem de expressões aritméticas em **Notação Polonesa Reversa (RPN)**. O programa lê um arquivo de texto com expressões, analisa cada uma usando um analisador léxico baseado em Autômato Finito Determinístico (AFD) e gera código Assembly compatível com o emulador **CPUlator ARMv7 DE1-SoC**, que executa os cálculos diretamente no hardware simulado e exibe os resultados nos displays de 7 segmentos.
@@ -113,8 +121,6 @@ Testes unitários do Analisador Léxico concluídos com sucesso.
 
 ## Como Executar
 
-### Passo 1 — Gerar os arquivos
-
 No terminal, execute o programa passando o arquivo de teste como argumento:
 
 ```bash
@@ -142,7 +148,7 @@ Dois arquivos são gerados na mesma pasta:
 - `tokens_gerados.txt` — lista de tokens extraídos de cada linha.
 - `saida.s` — código Assembly pronto para rodar no CPUlator.
 
-### Passo 2 — Executar no CPUlator
+## Como Testar o Programa
 
 1. Abra o arquivo `saida.s` recém-gerado e copie todo o seu conteúdo.
 2. Acesse o emulador: [CPUlator ARMv7 DE1-SoC](https://cpulator.01xz.net/?sys=arm-de1soc).
