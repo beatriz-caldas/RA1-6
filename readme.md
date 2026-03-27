@@ -1,236 +1,219 @@
-Projeto 26  Fase 1 - Analisador Léxico e Gerador de Assembly para ARMv7
-Este trabalho pode ser realizado em grupos de até 
- alunos. Grupos com mais de 4 membros terão o trabalho anulado. Leia todo este texto antes de começar e siga o seguinte código de ética: você pode discutir as questões com colegas, professores e amigos, consultar livros da disciplina, bibliotecas virtuais ou físicas, e a Internet em geral, em qualquer idioma. Você pode usar qualquer ferramenta de Inteligência Artificial para dúvidas, mas não para fazer o trabalho no seu lugar. O trabalho é seu e deve ser realizado por você. Trabalhos com indicativo de realização por inteligência artificial, ou com indicativo de cópia serão anulados.
+# Compilador de Expressões RPN para ARMv7
 
-Os trabalhos entregues serão avaliados por uma ferramenta de Inteligência Artificial, que verificará a originalidade do texto e a autoria do código. Em seguida o trabalho será avaliado pelo professor e finalmente o trabalho deverá ser defendido por um dos alunos do grupo em uma seção de prova de autoria conforme as regras disponíveis no plano de ensino.
+## Integrantes do Grupo (RA1-6)
 
-O trabalho deve ser entregue por meio da URL de um repositório público no Github contendo o código-fonte, arquivos de teste, documentação e código Assembly gerado. O repositório deve ser organizado com commits claros e as contribuições de cada aluno devem estar registradas na forma de pull requests.
+* Beatriz Caldas (beatriz-caldas)
+* Eduardo Pianovski (DuduPNetto)
+* Lucas Gasperin (Lucas-PG)
+* Lucas Sotomaior (LucasSotomaiorAPereira)
 
-26.1 Objetivo
-Pesquisar e praticar conceitos de analisador léxico para desenvolver um programa em Python, C, ou C++ que processe expressões aritméticas em notação polonesa reversa (RPN), conforme definida neste texto, a partir de um arquivo de texto, utilizando máquinas de estado finito (FSMs) implementadas obrigatoriamente com funções. O programa deve executar as expressões em um ambiente de teste (ex.: o notebook do aluno, ou um computador da instituição) usando como ambiente de execução o simulador disponível em CPULATOR usando obrigatoriamente modelo ARMv7 DEC1-SOC(v16.1).
+---
 
-O seu trabalho será criar um analisador léxico e, a partir do string de tokens gerar um código Assembly, compatível com a arquitetura ARMv7 DEC1-SOC(v16.1) que represente o programa de testes.
+## Visão Geral
 
-26.2 Descrição do Trabalho
-Seu objetivo é desenvolver um programa (em Python, C ou C++) capaz de:
+Este projeto implementa um compilador simples para uma linguagem de expressões aritméticas em **Notação Polonesa Reversa (RPN)**. O programa lê um arquivo de texto com expressões, analisa cada uma usando um analisador léxico baseado em Autômato Finito Determinístico (AFD) e gera código Assembly compatível com o emulador **CPUlator ARMv7 DE1-SoC**, que executa os cálculos diretamente no hardware simulado e exibe os resultados nos displays de 7 segmentos.
 
-Ler um arquivo de texto contendo expressões aritméticas em Escritas RPN, segundo o formato especificado neste documento, com uma expressão por linha. Este arquivo contém o código do programa que será analisado pelo analisador léxico.
-Analisar as expressões usando um analisador léxico baseado em Autômatos Finitos Determinísticos, com estados implementados por funções.
-Transformar as expressões em um texto contendo o código Assembly para o Cpulator-ARMv7 DEC1-SOC(v16.1). As operações descritas no texto de entrada serão realizadas no Cpulator-ARMv7 DEC1-SOC(v16.1).
-Garantir que o resultado do programa, ou as interações necessárias, sejam realizadas por meio das interfaces disponíveis no Cpulator-ARMv7 DEC1-SOC(v16.1) (display, leds, botões, chaves, etc.).
-Hospedar o código, arquivos de teste e documentação em um repositório público no GitHub.
-26.2.1 Características Especiais da Linguagem
-As expressões devem ser escritas em notação RPN, no formato (A B op), no qual A e B são números reais de 64 bits, e op é um operador aritmético entre os listados neste documento. O programa deve suportar apenas as operações aritméticas básicas listadas neste documento e os comandos especiais para manipulação de memória também listados neste documento. Além disso, o programa deve ser capaz de lidar com expressões aninhadas sem limites de aninhadas.
+---
 
-Para a criação da nossa linguagem de programação, considere a seguinte sintaxe:
+## Arquitetura do Sistema
 
-Considerando que A e B são números reais, e usando o ponto como separador decimal, (ex.: 3.14), teremos:
-Operadores suportados na Fase 1:
-Adição: + (ex.: (A B +));
-Subtração: - (ex.: (A B -));
-Multiplicação: * (ex.: (A B *));
-Divisão real: / (ex.: (A B /));
-Divisão inteira: / (ex.: (A B //) para inteiros);
-Resto da divisão inteira: % (ex.: (A B %));
-Potenciação: ^ (ex.: (A B ^), onde B é um inteiro positivo 
-);
-Todas as operações (exceto divisão inteira e resto) usam números reais codificados em 64 bits segundo a norma IEEE 754. A página Os desafios da norma IEEE 754 contém informações relevantes sobre a norma IEEE 754 para a realização desta tarefa.
+O compilador é organizado em três etapas que trabalham em sequência: análise léxica, avaliação das expressões e geração de Assembly.
 
-Expressões podem ser aninhadas sem limite, por exemplo:
+### Etapa 1 — Analisador Léxico (AFD)
 
-(A (C D *) +): Soma A ao produto de C e D;
-((A B *) (D E *) /): Divide o produto de A e B pelo produto de D e E.
-((A B +) (C D *) /): Divide a soma de A e B pelo produto de C e D.
-Warning
-A ordem de precedência das operações segue a ordem de precedência usual em matemática.
+A função `parseExpressao` converte cada linha de texto em uma lista de tokens usando um Autômato Finito Determinístico onde cada estado é uma função Python. O autômato começa em `estadoInicial` e transita entre os estados abaixo conforme os caracteres lidos:
 
-26.2.2 Comandos Especiais
-A linguagem que estamos criando inclui três comandos especiais para manipulação de memória e resultados:
+| Estado | Comportamento | Token Gerado |
+| :--- | :--- | :--- |
+| `estadoInicial` | Ignora espaços. Direciona cada caractere para o estado correto. Levanta erro se o caractere for inválido (ex: `@`, letras minúsculas). | — |
+| `estadoParenteses` | Registra `(` ou `)` e mantém um contador interno para verificar balanceamento. Ao final da linha, se o contador não for zero, levanta erro. | `AP` ou `FP` |
+| `estadoNumero` | Lê dígitos e aceita um único ponto decimal. Absorve o sinal `-` como parte do número quando ele aparece no início da linha, após espaço ou após `(`. Rejeita formatos inválidos como `3.14.15`, `3.` ou `3,14`. | `NUM` |
+| `estadoOperador` | Captura os operadores `+`, `-`, `*`, `%` e `^`. | `OP` |
+| `estadoBarra` | Usa *lookahead* de um caractere para distinguir `/` (divisão real) de `//` (divisão inteira). | `OP` |
+| `estadoIdentificador` | Lê sequências de letras **exclusivamente maiúsculas**. Rejeita misturas como `VAr` ou `VAR1`. Verifica se o lexema é a palavra reservada `RES`; caso contrário, trata como nome de variável. | `CMD` (para `RES`) ou `VAR` |
 
-(N RES): Retorna o resultado da expressão N linhas anteriores (N é um inteiro não negativo).
-(V MEM): Armazena o valor real V em uma memória chamada MEM.
-(MEM): Retorna o valor armazenado em MEM. Se a memória não foi inicializada, retorna 
-.
-Nos quais: - MEM pode ser qualquer conjunto de letras maiúsculas, tal como MEM, VAR, X, etc. - RES é uma keyword da linguagem que estamos criando. A única keyword da linguagem nesta fase.
+### Etapa 2 — Avaliador de Expressões (`executarExpressao`)
 
-Warning
-Cada arquivo de texto, código fonte da linguagem que estamos criando, representa um escopo independente de memória.
+A avaliação usa uma pilha para processar os tokens em ordem. A lógica é:
 
-26.3 Analisador Léxico com Autômatos Finitos Determinístico
-O analisador léxico deve ser implementado usando Autômatos Finitos Determinísticos, com cada estado representado por uma função. Qualquer forma diferente de implementação provocará o zeramento do trabalho.
+- Ao encontrar `AP` (`(`), empilha o marcador `"("`.
+- Ao encontrar `NUM`, converte para `float` e empilha.
+- Ao encontrar `OP`, desempilha os dois valores do topo, aplica a operação e empilha o resultado.
+- Ao encontrar `FP` (`)`), desempilha o resultado do topo, remove o marcador `"("` correspondente e reempilha o resultado — o que permite expressões aninhadas funcionarem naturalmente.
+- Ao encontrar `VAR`, verifica o contexto: se o topo for `"("`, é uma leitura de variável; caso contrário, é um armazenamento.
+- Ao encontrar `CMD` (`RES`), desempilha o número `N` e busca o resultado `N` posições atrás no histórico (índice `resultados[-N]`).
 
-O Autômato Finito Determinístico deve reconhecer tokens válidos na linguagem: números reais, operadores (+, -, *, `,%,^), e os comandos especiais (RES,MEM`). Além, é claro dos sinais de abertura e fechamento de parênteses.
+Ao final, a pilha deve conter exatamente um valor `float`; qualquer outra situação é tratada como expressão mal formada.
 
-Funções de teste específicas devem ser criadas para validar o analisador léxico, cobrindo:
+As operações suportadas são `+`, `-`, `*`, `/`, `//`, `%` e `^`. Divisão por zero é detectada em tempo de execução. Para `^`, o expoente deve ser um inteiro positivo.
 
-Entradas válidas (ex.: (3.14 2.0 +), (5 RES), (10.5 CONTADOr));
-Entradas inválidas (ex.: (3.14 2.0 &), números malformados como 3.14.5, 3,45 ou parênteses desbalanceados).
-Warning
-O uso de expressões regulares, ou das bibliotecas de expressões regulares disponíveis em Python, C ou C++, para a implementação do analisador léxico, é proibido e resultará no zeramento do trabalho.
+### Etapa 3 — Gerador de Assembly (`gerarAssembly`)
 
-26.4 Arquivos de Teste
-Para que seu trabalho possa ser avaliado você deverá: 1. Fornecer o mínimo de 3 arquivos de texto, cada um com pelo menos 10 linhas de expressões aritméticas escritas segundo a linguagem defininda neste documento. 2. Cada arquivo deve incluir todas as operações (+, -, *, /, %, ^) e comandos especiais ((N RES), (V MEM), (MEM)). 3. Os arquivos devem estar no mesmo diretório do código-fonte e ser processados via argumento de linha de comando (ex.: ./NomeDoSeuPrograma teste1.txt). 4. O programa não deve incluir menu ou qualquer seleção interativa de arquivos.
+A função `gerarAssembly` traduz os tokens diretamente para instruções ARMv7, usando a FPU (Unidade de Ponto Flutuante) para todos os cálculos.
 
-26.5 Hospedagem no GitHub
-O projeto deve ser hospedado em um repositório público no GitHub. O repositório deve ser criado por um dos alunos do grupo e deve ter o mesmo nome grupo que aparece no ambiente virtual da instituição onde o grupo está registrado. O repositório deve conter: 1. Código-fonte do programa; 2. Arquivos de teste (mínimo 3); 3. Funções de teste para o analisador léxico; 4. Última versão do Código Assembly para Cpulator-ARMv7 DEC1-SOC(v16.1) gerado pela última execução do seu projeto; 5. Documentação (ex.: arquivo README.md) explicando como compilar, executar e testar o programa. Contendo, no mínimo, o nome da instituição, disciplina, professor e nome dos alunos do grupo, em ordem alfabética seguido do usuário deste aluno no GitHub. 6. O repositório deve ser organizado com commits claros, as contribuições de cada um dos alunos devem estar registradas na forma de pull requests.
+**Cálculos numéricos:** constantes são armazenadas na seção `.data` como `.double` (IEEE 754, 64 bits) e carregadas nos registradores `d0`–`d5` via `VLDR.F64`. A pilha de operandos é gerenciada com `VPUSH` e `VPOP`.
 
-26.6 Requisitos do Código
-As primeiras linhas do código devem conter:
-Nomes dos integrantes do grupo, em ordem alfabética seguidos do usuário deste aluno no GitHub.
-Nome do grupo no ambiente virtual de aprendizagem (Canvas).
-O programa deve receber o nome do arquivo de teste como argumento na linha de comando. Nenhum menu será necessário.
+**Variáveis e histórico:** variáveis nomeadas e resultados anteriores (acessados por `RES`) ficam na seção `.bss`. O índice de `RES` é resolvido em tempo de compilação — o gerador calcula qual `res_N` referenciar no momento em que gera o código, não em tempo de execução.
 
-O código deve ser escrito em Python, C, ou C++. Com as funções nomeadas como está explicitado na Section 26.7.
+**Exibição via MMIO:** ao final de cada expressão, o resultado inteiro é decomposto dígito a dígito por subtração repetida por 10 (equivalente ao módulo), consultado em uma tabela de 7 segmentos (`tabela_7seg`) e enviado para os registradores de display:
 
-A última versão do código Assembly gerado deve ser funcional e incluído no repositório. A versão em Assembly deve ser exatamente o mesmo algoritmo explicitado no último arquivo de testes executado de forma que o resultados do programa seja obtido pelo cálculo realizado Cpulator-ARMv7 DEC1-SOC(v16.1).
+| Endereço | Dispositivo |
+| :--- | :--- |
+| `0xFF200020` | Display HEX0–HEX3 (dígitos + separador decimal) |
+| `0xFF200030` | Display HEX4–HEX5 (dígitos mais significativos e sinal) |
+| `0xFF200000` | LEDs vermelhos (recebem o valor inteiro absoluto do resultado) |
 
-26.7 Divisão de Tarefas para a Fase 1
-Para resolver o problema de processamento da expressões definidas nos arquivos de teste da fase 1, o trabalho será dividido entre até quatro alunos, trabalhando independentemente, na mesma sala, ou de forma remota. Cada aluno será responsável por uma parte específica do sistema, com interfaces claras para facilitar a integração. Abaixo está uma sugestão da divisão das tarefas, considerando as funções solicitadas: parseExpressao, executarExpressao, gerarAssembly, e exibirResultados.
+---
 
-Warning
-As tarefas podem ser divididas da forma que cada grupo achar mais conveniente, desde que as funções e interfaces sejam respeitadas. Nota: a divisão é sugestão, o nome das funções é obrigatório.
+## Testes do Analisador Léxico
 
-Warning
-Nota: O vetor de tokens gerado pelo Analisador Léxico deve ser salvo em um arquivo .txt para uso nas próximas fases do projeto. Cabe ao grupo decidir o formato que será usado para salvar os tokens(csv, json, etc.). Apenas os tokens referentes a última execução do código do analisador léxico devem estar salvos no repositório do GitHub.
+A função `testar_fsm_lexico()` é executada automaticamente toda vez que o programa roda. Ela cobre casos válidos e inválidos para garantir que o AFD está se comportando corretamente.
 
-26.7.1 Aluno 1: Função parseExpressao e Analisador Léxico com Autômato Finito Determinístico
-Responsabilidades: Criar e administrar o repositório no GitHub. Além disso:
+**Entradas válidas testadas:**
 
-Implementar parseExpressao(std::string linha, std::vector<std::string>& _tokens_) (ou equivalente em Python/C) para analisar uma linha de expressão RPN e extrair tokens.
+```
+(3.14 2.0 +)
+RES 1 +
+VAR //
+10 3 %
+```
 
-Implementar o analisador léxico usando Autômatos Finitos Determinísticos (AFDs), com cada estado como uma função (ex.: estadoNumero, estadoOperador, estadoParenteses).
+**Entradas inválidas testadas** (cada uma deve levantar o erro exato esperado):
 
-Validar tokens:
+| Entrada | Erro Esperado |
+| :--- | :--- |
+| `.5` | Número não pode começar com ponto |
+| `var` | Identificador deve ser em maiúsculas |
+| `3 @ 2` | Caractere léxico inválido |
+| `3 2 + )` | `)` sem `(` correspondente |
+| `3.14.15` | Múltiplos pontos no número |
+| `3.` | Número não pode terminar em ponto |
+| `3,14` | Vírgula não é separador decimal |
+| `3A` | Número não pode ser seguido de letras |
+| `VAr` | Identificador com letra minúscula |
+| `VAR1` | Identificador com dígito |
+| `( 3 2 +` | Parênteses desbalanceados (falta fechar) |
 
-Números reais (ex.: 3.14) usando ponto como separador decimal;
-Operadores (+, -, *, /, %, ^);
-Comandos especiais (RES, MEM) e parênteses;
-Detectar erros como números malformados (ex.: 3.14.5), parênteses desbalanceados ou operadores inválidos;
-Criar funções de teste para o analisador léxico, cobrindo entradas válidas e inválidas Tarefas Específicas:
-Escrever parseExpressao para dividir a linha em tokens usando um Autômato Finito Determinístico;
-Interface:
+Se todos os testes passarem, o programa imprime no terminal:
 
-Recebe uma linha de texto e retorna um vetor de tokens;
-Fornece tokens válidos para executarExpressao.
-26.7.2 Aluno 2: Função executarExpressao e Gerenciamento de Memória
-Responsabilidades:
+```
+Testes unitários do Analisador Léxico concluídos com sucesso.
+```
 
-Testar o Autômato Finito Determinístico com entradas diversificadas (3.14 2.0 +), (5 RES), (3.14.5 2.0 +) (inválido);
+---
 
-Criar um método, antes do Autômato Finito Determinístico, para lidar com parênteses aninhados.
+## Pré-requisitos
 
-Implementar executarExpressao(...) usando uma estrutura de dicionário/mapa para gerenciar múltiplas variáveis na memória.;
+- **Python 3.10 ou superior** — o código usa a sintaxe `match/case`, disponível a partir dessa versão.
+- Nenhuma biblioteca externa é necessária.
 
-Gerenciar a memória MEM para comandos (V MEM) e (MEM);
+---
 
-Manter um histórico de resultados para suportar (N RES);
+## Como Executar
 
-Criar funções de teste para validar a execução de expressões e comandos especiais.
+### Passo 1 — Gerar os arquivos
 
-Tarefas Específicas:
+No terminal, execute o programa passando o arquivo de teste como argumento:
 
-Usar uma pilha para avaliar expressões RPN (ex.: em C++: std::stack<float>);
-Implementar operações (+, -, *, /, %, ^) com precisão de 64 bits (IEEE 754);
-Tratar divisão inteira e resto separadamente;
-Interface:
+```bash
+python analisador_lexico.py teste1.txt
+```
 
-Recebe tokens de parseExpressao e atualiza resultados e memoria;
-Fornece resultados para exibirResultados e Assembly.
-26.7.3 Aluno 3: Função gerarAssembly e Leitura de Arquivo
-Responsabilidades:
+A saída esperada no terminal é:
 
-Testar com expressões como (3.14 2.0 +), ((1.5 2.0 *) (3.0 4.0 *) /), (5.0 MEM), (2 RES);
+```
+Testes unitários do Analisador Léxico concluídos com sucesso.
 
-Verificar erros como divisão por zero ou N inválido em (N RES).
+Resultados das Expressões
+Linha 1: 5.1
+Linha 2: 5.0
+...
 
-Implementar gerarAssembly(const std::vector<std::string>& _tokens_, std::string& codigoAssembly) para gerar o código Assembly;
+Arquivo de tokens gerado com sucesso.
+Arquivo Assembly 'saida.s' gerado com sucesso.
+```
 
-Implementar lerArquivo(std::string nomeArquivo, std::vector<std::string>& linhas) para ler o arquivo de entrada;
+Se alguma linha do arquivo contiver uma expressão inválida, o programa exibe o erro daquela linha específica, ignora ela e continua processando as demais.
 
-Criar funções de teste para validar a leitura de arquivos e a geração de Assembly; Lembre-se o Assembly deve conter todas as operações do texto de teste.
+Dois arquivos são gerados na mesma pasta:
 
-Tarefas Específicas:
+- `tokens_gerados.txt` — lista de tokens extraídos de cada linha.
+- `saida.s` — código Assembly pronto para rodar no CPUlator.
 
-A função gerarAssembly deve receber o vetor de tokens gerado pelo analisador léxico e traduzi-lo para Assembly ARMv7.
-Gerar Assembly ARMv7 para operações RPN e comandos especiais;
-Testar com arquivos contendo 10 linhas, ou mais, incluindo expressões aninhadas e comandos especiais;
-Verificar erros de abertura de arquivo e exibir mensagens claras.
-Interface:
+### Passo 2 — Executar no CPUlator
 
-lerArquivo fornece linhas para parseExpressao;
-gerarAssembly produz código Assembly.
-26.7.4 Aluno 4: Função exibirResultados, Interface do Usuário e Testes
-Responsabilidades:
+1. Abra o arquivo `saida.s` recém-gerado e copie todo o seu conteúdo.
+2. Acesse o emulador: [CPUlator ARMv7 DE1-SoC](https://cpulator.01xz.net/?sys=arm-de1soc).
+3. Cole o código no painel **Editor**.
+4. Clique em **Compile and Load** (F5).
+5. Clique em **Continue** (F3) para executar.
+6. Observe os displays HEX no painel **Devices** mostrando os resultados.
 
-Alertar se o arquivo tiver linhas malformadas ou exceder limites.
+---
 
-Implementar exibirResultados(const std::vector<float>& resultados) para exibir os resultados das expressões;
+## Interpretando os Resultados
 
-Implementar e gerenciar a interface no main, incluindo leitura do argumento de linha de comando;
+Os displays de 7 segmentos não têm um ponto decimal nativo, então o programa usa o segmento `g` (traço do meio, código `0x08`) como separador visual. Por exemplo, o valor `8.8` aparece nos displays como `8_8`.
 
-Corrigir problemas de entrada (ex.: em C++: std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'));
+Se o resultado for negativo, o segmento de sinal de menos (`-`, código `0x40`) é aceso no display mais à esquerda. Por exemplo, `-8.8` seria exibido como `-008_8`. Os LEDs vermelhos recebem o valor inteiro absoluto do resultado via MMIO.
 
-Criar funções de teste para validar a saída e o comportamento do programa completo.
+---
 
-Tarefas Específicas:
+## Exemplos Práticos
 
-Exibir resultados com formato claro (ex.: uma casa decimal para números reais);
-Implementar o main para chamar lerArquivo, parseExpressao, executarExpressao, e exibirResultados;
-Testar com arquivos de teste fornecidos, verificando saídas para expressões simples e complexas;
-Testar o FSM com comandos especiais como (V MEM) e (MEM);
-Interface:
+### Entrada
 
-Usa resultados de executarExpressao para exibir saídas;
-Gerencia a execução do programa via argumento de linha de comando.
-26.8 Considerações para Integração
-Interfaces: concordar com assinaturas das funções e formatos de dados (ex.: vetor de tokens, resultados em binário 64 bits);
+```
+(3.14 2.0 +)
+```
 
-Depuração: testar cada parte isoladamente, simulando entradas/saídas;
+### Tokens gerados (`tokens_gerados.txt`)
 
-Passos de Integração:
+```
+Linha 1: [('AP', '('), ('NUM', '3.14'), ('NUM', '2.0'), ('OP', '+'), ('FP', ')')]
+```
 
-Copiar main do Aluno 4;
-Inserir lerArquivo e gerarAssembly do Aluno 3;
-Adicionar executarExpressao do Aluno 2;
-Incluir parseExpressao do Aluno 1;
-Resolução de Conflitos: discutir problemas imediatamente na sala, ou de forma remota. Idealmente, todos os problemas, e todo o processo de desenvolvimento deve estar registrado com as ferramentas disponíveis no GitHub (ex.: issues, pull requests, commits).
+### Trecho do Assembly gerado (`saida.s`)
 
-Depuração Final: Testar o programa com os 3 arquivos de teste, verificando expressões, comandos especiais, e saída Assembly.
+```asm
+    @ NOVA EXPRESSAO RPN
+    LDR r0, =const_num_0        @ Endereço da constante 3.14
+    VLDR.F64 d0, [r0]           @ Carrega 3.14 em d0
+    VPUSH {d0}                  @ Empilha
 
-Warning
-Você pode fazer um programa em paralelo, que não será incluido no repositório do seu projeto, para testar as funções que criar. Neste programa de comparação, você pode usar os recursos que desejar.
+    LDR r0, =const_num_1        @ Endereço da constante 2.0
+    VLDR.F64 d0, [r0]           @ Carrega 2.0 em d0
+    VPUSH {d0}                  @ Empilha
 
-26.9 Avaliação
-O trabalho será avaliado antes da prova de autoria, primeiro por um sistema de inteligência artificial e depois pelo professor, com os seguintes critérios:
+    VPOP {d1}                   @ Desempilha 2.0 → d1
+    VPOP {d0}                   @ Desempilha 3.14 → d0
+    VADD.F64 d2, d0, d1         @ d2 = d0 + d1 (5.14)
+    VPUSH {d2}                  @ Empilha resultado
 
-Cálculos e Funcionalidades (70%):
+    VPOP {d0}                   @ Resultado final
+    LDR r0, =res_0
+    VSTR.F64 d0, [r0]           @ Salva em memória (.bss)
+```
 
-Implementação completa de todas as operações RPN e comandos especiais.
-Cada operação não implementada reduz 10% dos 70% deste item.
-Falha na divisão inteira reduz 50% dos 70% deste item.
-Analisador léxico com Autômato Finito funcional e testado.
-Uso de ponto flutuante com precisão inferior a 64 bits, ou diferente da norma IEEE754 reduz 90% dos 70% deste item.
-Organização e Legibilidade do Código (15%):
+---
 
-Código claro, comentado e bem estruturado.
-Repositório GitHub organizado, com README completo, explicando o projeto e atendendo as condições definidas anteriormente.
-Robustez (15%):
+## Resolução de Ambiguidades da Linguagem
 
-Tratamento de erros em expressões complexas e entradas inválidas.
-Testes do analisador léxico cobrindo todos os casos.
-26.10 Prova de Autoria
-Um aluno do grupo será sorteado, por um sistema disponível online (https://frankalcantara.com/sorteio) para responder uma pergunta em uma lista de até 10 perguntas;
-Falha na explicação do trabalho, ou na resposta reduz 35% da nota obtida na Avaliação do Projeto.
-Warning
-O aluno sorteado, e apenas o aluno sorteado poderá contestar a avaliação feita pelo professor antes da prova de autoria.
+### Sinal negativo vs. operador de subtração
 
-26.11 Entrega
-O repositório GitHub deve conter:
+O caractere `-` é interpretado como início de número negativo **apenas se** for imediatamente seguido por um dígito **e** ocorrer em uma dessas posições: início da linha, após espaço em branco, ou após `(`. Em qualquer outro contexto, é tratado como operador `OP`.
 
-Código-fonte (Python, C, ou C++);
-Três arquivos de teste com expressões RPN;
-Funções de teste para o analisador léxico;
-Código Assembly da última execução do analisador léxico;
-Arquivo de texto contendo os tokens gerados na última execução do analisador léxico;
-README com instruções de compilação, execução e testes;
-O programa deve ser executado com o comando ./NomeDoSeuPrograma  teste1.txt. Ou o equivalente a isso em Python.
+### Divisão real (`/`) vs. divisão inteira (`//`)
+
+O estado `estadoBarra` usa *lookahead* para verificar se o próximo caractere também é `/`. Se sim, gera o token `OP //`; caso contrário, gera `OP /`.
+
+- `/` → `VDIV.F64 d2, d0, d1` (resultado em ponto flutuante)
+- `//` → divisão real seguida de `VCVT.S32.F64` + `VCVT.F64.S32` (trunca a parte fracionária)
+
+### Comando `RES N`
+
+`N` indica quantos resultados anteriores retroceder: `(1 RES)` retorna o último resultado, `(2 RES)` o penúltimo, e assim por diante. Em Python, isso é implementado como `resultados[-N]`. No Assembly gerado, o índice é calculado em tempo de compilação — o gerador resolve qual label `res_N` usar no momento da tradução.
+
+### Variáveis de memória
+
+Qualquer sequência de letras maiúsculas (ex: `MEM`, `VAR`, `X`) funciona como nome de variável. A sintaxe `(10.5 MEM)` armazena o valor; `(MEM)` recupera. Se uma variável for lida antes de ser inicializada, o valor retornado é `0.0`. Cada arquivo de texto representa um escopo de memória independente.
